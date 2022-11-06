@@ -83,12 +83,13 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void PlayAttackMontage(FName sectionName, float playRate);
-
+	
 	void PlayMontage(FString name);
 
 	
 public:
 	USparrowAnimInstance();
 	virtual void NativeUpdateAnimation(float fDeltaSeconds) override;
+	virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;
 	virtual void NativeInitializeAnimation() override;
 };

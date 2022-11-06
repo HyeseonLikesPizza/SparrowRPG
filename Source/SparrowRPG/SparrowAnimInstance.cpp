@@ -99,6 +99,10 @@ void USparrowAnimInstance::NativeUpdateAnimation(float fDeltaSeconds)
 
 }
 
+void USparrowAnimInstance::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
+{
+}
+
 void USparrowAnimInstance::PlayMontage(FString name)
 {
 
