@@ -10,6 +10,9 @@
  * 
  */
 DECLARE_MULTICAST_DELEGATE(FResetComboCheckDelegate);
+DECLARE_MULTICAST_DELEGATE(FLoadingCheck);
+DECLARE_MULTICAST_DELEGATE(FFireCheck);
+DECLARE_MULTICAST_DELEGATE(FCanFireCheck);
 
 UCLASS()
 class SPARROWRPG_API USparrowAnimInstance : public UAnimInstance
@@ -17,7 +20,7 @@ class SPARROWRPG_API USparrowAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite)
 	class ASparrowRPGCharacter* Character;
 
 	UPROPERTY()
@@ -47,12 +50,27 @@ public:
 	UAnimMontage* AttackMontage;
 
 	FResetComboCheckDelegate ResetComboCheck;
+	FLoadingCheck LoadingCheck;
+	FFireCheck FireCheck;
+	FCanFireCheck CanFireCheck;
 
 	UFUNCTION()
 	void AnimNotify_ResetCombo();
 
+	UFUNCTION()
+	void AnimNotify_Loading();
 
-	void PlayAttackMontage();
+	UFUNCTION()
+	void AnimNotify_Fire();
+
+	UFUNCTION()
+	void AnimNotify_CanFire();
+
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void PlayAttackMontage(FName sectionName, float playRate);
+
+	void PlayMontage(FString name);
 
 	
 public:

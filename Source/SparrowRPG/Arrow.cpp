@@ -41,13 +41,14 @@ AArrow::AArrow()
 		HitEffect->bAutoActivate = false;
 	}
 
-	//InitialLifeSpan = 10.f;
+	InitialLifeSpan = 3.f;
 
 	
 }
 
 void AArrow::Fire(const FVector& ShootDirection)
 {
+	//UE_LOG(LogTemp, Warning, TEXT("Fire"));
 	ProjectileMovementComponent->Velocity = ShootDirection * ProjectileMovementComponent->InitialSpeed;
 	//Effect->Activate(true);
 	//Mesh->ToggleVisibility();

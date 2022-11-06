@@ -5,13 +5,13 @@
 #include "SparrowRPG.h"
 #include "GameFramework/Character.h"
 #include "Arrow.h"
-
+#include "Runtime/Engine/Classes/Components/TimelineComponent.h"
 #include "SparrowRPGCharacter.generated.h"
 
 UCLASS(config=Game)
 class ASparrowRPGCharacter : public ACharacter
 {
-	GENERATED_BODY()
+	GENERATED_BODY()	
 
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -27,19 +27,44 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Input)
 	float TurnRateGamepad;
 
+
 	// 내가 사용하는 것들
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
 	TSubclassOf<class AArrow> ProjectileClass;
 
+	void Attack(float fTime);
 	void Fire();
-
 
 	UPROPERTY()
 	bool CanFire;
+	bool Loading;
+	bool IsZooming;
 
 	UPROPERTY()
 	class USparrowAnimInstance* Anim;
 
+	float fLTime;
+	float fLastTime;
+	float fADeltaTime;
+
+	class UTimelineComponent* MyTimeline;
+
+	UPROPERTY(EditAnywhere, Category = "Timeline")
+	class UCurveFloat* fCurve;
+
+	UPROPERTY()
+	FVector CameraStartLocation;
+
+	UPROPERTY()
+	FVector CameraEndLocation;
+
+	UPROPERTY(EditAnywhere, Category = "Timeline")
+	float XOffset;
+
+	FOnTimelineFloat InterpFunction{};
+
+	UFUNCTION()
+	void TimelineFloatReturn(float value);
 
 	UPROPERTY()
 	APlayerCameraManager* CameraManager;

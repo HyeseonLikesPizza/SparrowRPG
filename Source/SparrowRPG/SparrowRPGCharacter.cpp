@@ -51,19 +51,9 @@ ASparrowRPGCharacter::ASparrowRPGCharacter()
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 
-	/*
-	static ConstructorHelpers::FClassFinder<AArrow>
-		BP_ARROW(TEXT("/Game/Blueprints/BP_Arrow.BP_Arrow_C"));
-	if (BP_ARROW.Succeeded())
-	{
-		ProjectileClass = BP_ARROW.Class;
-	}
-	*/
-
-	ProjectileClass = AArrow::StaticClass();
-
 	
 
+	ProjectileClass = AArrow::StaticClass();
 
 	GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
 
@@ -74,7 +64,15 @@ ASparrowRPGCharacter::ASparrowRPGCharacter()
 		GetMesh()->SetAnimInstanceClass(SPARROW_ANIM.Class);
 	}
 
+	MyTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Timeline"));
+
+	InterpFunction.BindUFunction(this, FName("TimelineFloatReturn"));
+
+	XOffset = 50.f;
+
+
 	CanFire = true;
+	fLTime = 0.f;
 	
 
 }
@@ -88,7 +86,7 @@ void ASparrowRPGCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	check(PlayerInputComponent);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	//PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASparrowRPGCharacter::Load);
-	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASparrowRPGCharacter::Fire);
+	//PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASparrowRPGCharacter::Fire);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindAxis("Move Forward / Backward", this, &ASparrowRPGCharacter::MoveForward);
@@ -98,7 +96,7 @@ void ASparrowRPGCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	// "turn" handles devices that provide an absolute delta, such as a mouse.
 	// "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
 	PlayerInputComponent->BindAxis("Turn Right / Left Mouse", this, &APawn::AddControllerYawInput);
-	//PlayerInputComponent->BindAxis("Fire", this, &ASparrowRPGCharacter::Fire);
+	PlayerInputComponent->BindAxis("Attack", this, &ASparrowRPGCharacter::Attack);
 	PlayerInputComponent->BindAxis("Turn Right / Left Gamepad", this, &ASparrowRPGCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("Look Up / Down Mouse", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("Look Up / Down Gamepad", this, &ASparrowRPGCharacter::LookUpAtRate);
@@ -111,19 +109,43 @@ void ASparrowRPGCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 void ASparrowRPGCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	Anim = Cast<USparrowAnimInstance>(GetMesh()->GetAnimInstance());
-	ABCHECK(nullptr != Anim);
-
-	Anim->ResetComboCheck.AddLambda([this]()->void {
-		UE_LOG(LogTemp, Warning, TEXT("CanFire == true"));
-		CanFire = true;
-	});
 
 	UWorld* world = GetWorld();
-	if (world)
+	ABCHECK(world != nullptr);
+	CameraManager = UGameplayStatics::GetPlayerCameraManager(world, 0);
+	fADeltaTime = world->GetTimeSeconds();
+
+	Anim = Cast<USparrowAnimInstance>(GetMesh()->GetAnimInstance());
+	ABCHECK(nullptr != Anim);
+	Anim->CanFireCheck.AddLambda([this]()->void {
+		CanFire = true;
+	});
+	Anim->FireCheck.AddLambda([this]()->void {
+		CanFire = false;
+		Loading = false;
+	});
+	Anim->ResetComboCheck.AddLambda([this]()->void {
+		//fLTime = 2.f;
+	});
+	Anim->LoadingCheck.AddLambda([this]()->void {
+		Loading = true;
+	});
+
+
+
+	if (fCurve)
 	{
-		CameraManager = UGameplayStatics::GetPlayerCameraManager(world, 0);
+		MyTimeline->AddInterpFloat(fCurve, InterpFunction, FName("Alpha"));
+
+		CameraStartLocation = CameraBoom->GetRelativeLocation();
+		CameraEndLocation = FVector(CameraStartLocation.X+XOffset, CameraStartLocation.Y,
+			CameraStartLocation.Z);
+
+
+		MyTimeline->SetLooping(false);
+		MyTimeline->SetIgnoreTimeDilation(true);
 	}
+	
 	
 }
 
@@ -149,62 +171,112 @@ void ASparrowRPGCharacter::LookUpAtRate(float Rate)
 	AddControllerPitchInput(Rate * TurnRateGamepad * GetWorld()->GetDeltaSeconds());
 }
 
+void ASparrowRPGCharacter::Attack(float fTime)
+{
+	UE_LOG(LogTemp, Warning, TEXT("fLTime : %f"), fLTime);
+
+	//발사 후 재장전
+	if (Loading == true)
+	{
+		Anim->PlayAttackMontage(FName(FString::FromInt(1)),1.f);
+		Loading = false;
+	}
+
+	//장전
+	if((fTime==1.f && fLTime == 0.f) )
+	{
+		if (MyTimeline->GetPlaybackPosition() == 0.0f)
+		{
+			GLog->Log("Play");
+			MyTimeline->SetPlayRate(1.0f);
+			MyTimeline->Play();
+		}
+			
+		Anim->PlayAttackMontage(FName(FString::FromInt(1)), 0.5f);
+	}
+
+	if(fTime == 1.f && fLTime < 1.f)
+		fLTime += fTime / 30.f;
+	
+
+	//발사
+	if (fLTime > 0.f && fTime == 0.f && CanFire == true)
+	{
+		Anim->PlayAttackMontage(FName(FString::FromInt(0)), 0.8f);
+		Fire();
+
+		if (MyTimeline->GetPlaybackPosition() == MyTimeline->GetTimelineLength())
+		{
+			GLog->Log("Reverse");
+			MyTimeline->SetPlayRate(1.8f);
+			MyTimeline->Reverse();
+		}
+			
+	}
+
+}
+
 void ASparrowRPGCharacter::Fire()
 {
 
+
+	
 	UWorld* world = GetWorld();
-	
-	if (world && CanFire)
+	ABCHECK(nullptr != world)
+
+	FHitResult HitResult;
+	const FName TraceTag("MyTraceTag");
+	FCollisionQueryParams Params;
+	FActorSpawnParameters spawnParams;
+
+	Params.AddIgnoredActor(this);
+	world->DebugDrawTraceTag = TraceTag;
+	Params.TraceTag = TraceTag;
+
+	FVector CrosshairWorldLocation = CameraManager->GetCameraLocation();
+	FVector ImpactPoint = CrosshairWorldLocation + CameraManager->GetActorForwardVector() * 15000.f;
+	FVector ArrowSpawnLocation;
+	FRotator ArrowSpawnRotation;
+
+	if (world->LineTraceSingleByChannel(HitResult, CrosshairWorldLocation, ImpactPoint, ECollisionChannel::ECC_Visibility, Params))
 	{
-		CanFire = false;
+		//DrawDebugLine(world, CrosshairWorldLocation, ImpactPoint, FColor::Red, false, 3.0f);
 
-		FHitResult HitResult;
-		const FName TraceTag("MyTraceTag");
-		FCollisionQueryParams Params;
-		FActorSpawnParameters spawnParams;
-
-		Params.AddIgnoredActor(this);
-		world->DebugDrawTraceTag = TraceTag;
-		Params.TraceTag = TraceTag;
-
-		FVector CrosshairWorldLocation = CameraManager->GetCameraLocation();
-		FVector ImpactPoint = CrosshairWorldLocation + CameraManager->GetActorForwardVector() * 15000.f;
-		FVector ArrowSpawnLocation;
-		FRotator ArrowSpawnRotation;
-
-		if (world->LineTraceSingleByChannel(HitResult, CrosshairWorldLocation, ImpactPoint, ECollisionChannel::ECC_Visibility, Params))
+		if (HitResult.bBlockingHit)
 		{
-			//DrawDebugLine(world, CrosshairWorldLocation, ImpactPoint, FColor::Red, false, 3.0f);
+			ImpactPoint = HitResult.ImpactPoint;
 
-			if (HitResult.bBlockingHit)
-			{
-				ImpactPoint = HitResult.ImpactPoint;
-
-			}
-
-			ArrowSpawnLocation = GetMesh()->GetSocketLocation("arrow_socket");
-			ArrowSpawnRotation = (ImpactPoint - ArrowSpawnLocation).Rotation();
 		}
 
-		spawnParams.Owner = this;
-		spawnParams.Instigator = GetInstigator();
-
-		AArrow* arrow = world->SpawnActor<AArrow>(ProjectileClass, ArrowSpawnLocation, ArrowSpawnRotation, spawnParams);
-
-		if (arrow && Anim)
-		{
-			FVector LaunchDirection = ArrowSpawnRotation.Vector();
-			arrow->Fire(LaunchDirection);
-			Anim->PlayAttackMontage();
-		}
-
-
+		ArrowSpawnLocation = GetMesh()->GetSocketLocation("arrow_socket");
+		ArrowSpawnRotation = (ImpactPoint - ArrowSpawnLocation).Rotation();
 	}
-	
+
+	spawnParams.Owner = this;
+	spawnParams.Instigator = GetInstigator();
+
+	AArrow* arrow = world->SpawnActor<AArrow>(ProjectileClass, ArrowSpawnLocation, ArrowSpawnRotation, spawnParams);
+
+	if (arrow && Anim)
+	{
+		
+		FVector LaunchDirection = ArrowSpawnRotation.Vector();
+		arrow->Fire(LaunchDirection * fLTime);
+		fLTime = 0.f;
+	}
+
+
+
+
 	
 }
 
 
+
+void ASparrowRPGCharacter::TimelineFloatReturn(float value)
+{
+	CameraBoom->SetRelativeLocation(FMath::Lerp(CameraStartLocation, CameraEndLocation, value));
+}
 
 void ASparrowRPGCharacter::MoveForward(float Value)
 {

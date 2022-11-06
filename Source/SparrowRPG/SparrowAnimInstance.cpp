@@ -5,6 +5,8 @@
 #include "SparrowRPGCharacter.h"
 
 
+
+
 USparrowAnimInstance::USparrowAnimInstance()
 {
 	static ConstructorHelpers::FObjectFinder<UAnimMontage>
@@ -60,6 +62,13 @@ void USparrowAnimInstance::NativeUpdateAnimation(float fDeltaSeconds)
 
 }
 
+void USparrowAnimInstance::PlayMontage(FString name)
+{
+
+
+
+}
+
 
 
 void USparrowAnimInstance::AnimNotify_ResetCombo()
@@ -67,10 +76,19 @@ void USparrowAnimInstance::AnimNotify_ResetCombo()
 	ResetComboCheck.Broadcast();
 }
 
-void USparrowAnimInstance::PlayAttackMontage()
+void USparrowAnimInstance::AnimNotify_Loading()
 {
-	if (!Montage_IsPlaying(AttackMontage))
-	{
-		Montage_Play(AttackMontage, 1.0f);
-	}
+	LoadingCheck.Broadcast();
 }
+
+
+void USparrowAnimInstance::AnimNotify_Fire()
+{
+	FireCheck.Broadcast();
+}
+
+void USparrowAnimInstance::AnimNotify_CanFire()
+{
+	CanFireCheck.Broadcast();
+}
+
