@@ -44,6 +44,20 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	float YawOffset;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float RootYawOffset;
+
+	UFUNCTION()
+	void TurnInPlace(float DeltaTime);
+
+
+	FRotator MovingRotation;
+	FRotator LastMovingRotation;
+	float DistanceCurve;
+	float LastDistanceCurve;
+	float DeltaDistanceCurve;
+	float AbsRootYawOffset;
+	float YawExcess;
 	
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Montage")

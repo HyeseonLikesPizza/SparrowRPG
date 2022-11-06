@@ -3,6 +3,7 @@
 
 #include "SparrowAnimInstance.h"
 #include "SparrowRPGCharacter.h"
+#include "Kismet/KismetMathLibrary.h"
 
 
 
@@ -56,8 +57,44 @@ void USparrowAnimInstance::NativeUpdateAnimation(float fDeltaSeconds)
 		IsFalling = MovementComponent->IsFalling();
 		BaseAimRotation = Character->GetBaseAimRotation();
 		YawOffset = (FRotationMatrix::MakeFromX(Velocity).Rotator() - BaseAimRotation).GetNormalized().Yaw;
-		//UE_LOG(LogTemp, Warning, TEXT("Yaw Offset : %f"), YawOffset);
-		//Montage_Play(AttackMontage, 1.0f);
+		
+		TurnInPlace(fDeltaSeconds);
+
+		// IsTurning?
+		if (GetCurveValue(FName("Turning")) > 0.f)
+		{
+			LastDistanceCurve = DistanceCurve;
+			DistanceCurve = GetCurveValue(FName("DistanceCurve"));
+			DeltaDistanceCurve = DistanceCurve - LastDistanceCurve;
+
+			//Turning Left
+			if (RootYawOffset > 0.f)
+			{
+				RootYawOffset = RootYawOffset - DeltaDistanceCurve;
+			}
+			else
+			{
+				RootYawOffset = RootYawOffset + DeltaDistanceCurve;
+			}
+
+			AbsRootYawOffset = abs(RootYawOffset);
+
+			if (AbsRootYawOffset > 90.f)
+			{
+				YawExcess = AbsRootYawOffset - 90.f;
+
+				if (RootYawOffset > 0.f)
+				{
+					RootYawOffset = RootYawOffset - YawExcess;
+				}
+				else
+				{
+					RootYawOffset = RootYawOffset + YawExcess;
+				}
+			}
+
+
+		}
 	}
 
 }
@@ -70,6 +107,32 @@ void USparrowAnimInstance::PlayMontage(FString name)
 }
 
 
+
+void USparrowAnimInstance::TurnInPlace(float DeltaTime)
+{
+	if (GroundSpeed > 0.f || IsFalling)
+	{
+		RootYawOffset = FMath::FInterpTo(RootYawOffset, 0.f, DeltaTime, 20.0f);
+		MovingRotation = Character->GetActorRotation();
+		LastMovingRotation = MovingRotation;
+	}
+	else
+	{
+		LastMovingRotation = MovingRotation;
+		MovingRotation = Character->GetActorRotation();
+
+		FRotator Delta;
+		Delta = UKismetMathLibrary::NormalizedDeltaRotator(MovingRotation, LastMovingRotation);
+		RootYawOffset = RootYawOffset - Delta.Yaw;
+
+		//if (GEngine)
+		//	GEngine->AddOnScreenDebugMessage(1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Root Yaw Offset : %f"), RootYawOffset));
+
+
+	}
+	
+	
+}
 
 void USparrowAnimInstance::AnimNotify_ResetCombo()
 {
