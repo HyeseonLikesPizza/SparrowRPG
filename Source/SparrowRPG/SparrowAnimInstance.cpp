@@ -39,26 +39,20 @@ void USparrowAnimInstance::NativeUpdateAnimation(float fDeltaSeconds)
 {
 	Super::NativeUpdateAnimation(fDeltaSeconds);
 
+	
+
+}
+
+void USparrowAnimInstance::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
+{
 	if (Character)
 	{
+		CalculateGroundSpeed();
+		CalculateShouldMove();
+		CalculateIsFalling();
+		CalculateYawOffset();
 		
-		Velocity = MovementComponent->GetLastUpdateVelocity();
-		//UE_LOG(LogTemp, Warning, TEXT("%f %f %f"), Velocity.X, Velocity.Y, Velocity.Z);
-		GroundSpeed = FVector(Velocity.X, Velocity.Y, 0).Length();
-
-		if (GroundSpeed > 3.f && (MovementComponent->GetCurrentAcceleration() != FVector::ZeroVector))
-		{
-			
-			ShouldMove = true;
-		}
-		else
-			ShouldMove = false;
-
-		IsFalling = MovementComponent->IsFalling();
-		BaseAimRotation = Character->GetBaseAimRotation();
-		YawOffset = (FRotationMatrix::MakeFromX(Velocity).Rotator() - BaseAimRotation).GetNormalized().Yaw;
-		
-		TurnInPlace(fDeltaSeconds);
+		TurnInPlace(DeltaSeconds);
 
 		// IsTurning?
 		if (GetCurveValue(FName("Turning")) > 0.f)
@@ -96,11 +90,6 @@ void USparrowAnimInstance::NativeUpdateAnimation(float fDeltaSeconds)
 
 		}
 	}
-
-}
-
-void USparrowAnimInstance::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
-{
 }
 
 void USparrowAnimInstance::PlayMontage(FString name)
@@ -108,6 +97,35 @@ void USparrowAnimInstance::PlayMontage(FString name)
 
 
 
+}
+
+void USparrowAnimInstance::CalculateGroundSpeed()
+{
+	
+	Velocity = MovementComponent->GetLastUpdateVelocity();
+	GroundSpeed = FVector(Velocity.X, Velocity.Y, 0).Length();
+}
+
+void USparrowAnimInstance::CalculateShouldMove()
+{
+	if (GroundSpeed > 3.f && (MovementComponent->GetCurrentAcceleration() != FVector::ZeroVector))
+	{
+
+		ShouldMove = true;
+	}
+	else
+		ShouldMove = false;
+}
+
+void USparrowAnimInstance::CalculateIsFalling()
+{
+	IsFalling = MovementComponent->IsFalling();
+}
+
+void USparrowAnimInstance::CalculateYawOffset()
+{
+	BaseAimRotation = Character->GetBaseAimRotation();
+	YawOffset = (FRotationMatrix::MakeFromX(Velocity).Rotator() - BaseAimRotation).GetNormalized().Yaw;
 }
 
 

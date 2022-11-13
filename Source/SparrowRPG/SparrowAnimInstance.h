@@ -50,6 +50,8 @@ public:
 	UFUNCTION()
 	void TurnInPlace(float DeltaTime);
 
+	
+
 
 	FRotator MovingRotation;
 	FRotator LastMovingRotation;
@@ -86,6 +88,12 @@ public:
 	
 	void PlayMontage(FString name);
 
+	
+	void CalculateGroundSpeed();
+	void CalculateShouldMove();
+	void CalculateIsFalling();
+	void CalculateYawOffset();
+	
 	
 public:
 	USparrowAnimInstance();
