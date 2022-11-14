@@ -35,13 +35,7 @@ void USparrowAnimInstance::NativeInitializeAnimation()
 }
 
 
-void USparrowAnimInstance::NativeUpdateAnimation(float fDeltaSeconds)
-{
-	Super::NativeUpdateAnimation(fDeltaSeconds);
 
-	
-
-}
 
 void USparrowAnimInstance::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 {
@@ -51,44 +45,7 @@ void USparrowAnimInstance::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 		CalculateShouldMove();
 		CalculateIsFalling();
 		CalculateYawOffset();
-		
 		TurnInPlace(DeltaSeconds);
-
-		// IsTurning?
-		if (GetCurveValue(FName("Turning")) > 0.f)
-		{
-			LastDistanceCurve = DistanceCurve;
-			DistanceCurve = GetCurveValue(FName("DistanceCurve"));
-			DeltaDistanceCurve = DistanceCurve - LastDistanceCurve;
-
-			//Turning Left
-			if (RootYawOffset > 0.f)
-			{
-				RootYawOffset = RootYawOffset - DeltaDistanceCurve;
-			}
-			else
-			{
-				RootYawOffset = RootYawOffset + DeltaDistanceCurve;
-			}
-
-			AbsRootYawOffset = abs(RootYawOffset);
-
-			if (AbsRootYawOffset > 90.f)
-			{
-				YawExcess = AbsRootYawOffset - 90.f;
-
-				if (RootYawOffset > 0.f)
-				{
-					RootYawOffset = RootYawOffset - YawExcess;
-				}
-				else
-				{
-					RootYawOffset = RootYawOffset + YawExcess;
-				}
-			}
-
-
-		}
 	}
 }
 
@@ -149,6 +106,42 @@ void USparrowAnimInstance::TurnInPlace(float DeltaTime)
 
 		//if (GEngine)
 		//	GEngine->AddOnScreenDebugMessage(1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Root Yaw Offset : %f"), RootYawOffset));
+
+
+	}
+
+	// IsTurning?
+	if (GetCurveValue(FName("Turning")) > 0.f)
+	{
+		LastDistanceCurve = DistanceCurve;
+		DistanceCurve = GetCurveValue(FName("DistanceCurve"));
+		DeltaDistanceCurve = DistanceCurve - LastDistanceCurve;
+
+		//Turning Left
+		if (RootYawOffset > 0.f)
+		{
+			RootYawOffset = RootYawOffset - DeltaDistanceCurve;
+		}
+		else
+		{
+			RootYawOffset = RootYawOffset + DeltaDistanceCurve;
+		}
+
+		AbsRootYawOffset = abs(RootYawOffset);
+
+		if (AbsRootYawOffset > 90.f)
+		{
+			YawExcess = AbsRootYawOffset - 90.f;
+
+			if (RootYawOffset > 0.f)
+			{
+				RootYawOffset = RootYawOffset - YawExcess;
+			}
+			else
+			{
+				RootYawOffset = RootYawOffset + YawExcess;
+			}
+		}
 
 
 	}

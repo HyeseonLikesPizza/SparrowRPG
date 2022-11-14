@@ -97,7 +97,7 @@ public:
 	
 public:
 	USparrowAnimInstance();
-	virtual void NativeUpdateAnimation(float fDeltaSeconds) override;
+	//virtual void NativeUpdateAnimation(float fDeltaSeconds) override;
 	virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;
 	virtual void NativeInitializeAnimation() override;
 };
