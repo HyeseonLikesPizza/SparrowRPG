@@ -2,6 +2,8 @@
 
 
 #include "Arrow.h"
+#include "Particles/ParticleSystemComponent.h"
+#include "GameFramework/ProjectileMovementComponent.h"
 
 // Sets default values
 AArrow::AArrow()
@@ -13,12 +15,14 @@ AArrow::AArrow()
 	Mesh->SetCollisionProfileName(TEXT("NoCollision"));
 	RootComponent = Mesh;
 
+	/*
 	static ConstructorHelpers::FObjectFinder<UStaticMesh>
 		SM_ARROW(TEXT("StaticMesh'/Game/ParagonSparrow/FX/Meshes/Heroes/Sparrow/Abilities/SM_Sparrow_Arrow2.SM_Sparrow_Arrow2'"));
 	if (SM_ARROW.Succeeded())
 	{
 		Mesh->SetStaticMesh(SM_ARROW.Object);
 	}
+	*/
 
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 	ProjectileMovementComponent->SetUpdatedComponent(Mesh);
@@ -33,13 +37,16 @@ AArrow::AArrow()
 	HitEffect = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("HitEffect"));
 	HitEffect->SetupAttachment(Box);
 
+	/*
 	static ConstructorHelpers::FObjectFinder<UParticleSystem>
 		P_Hit(TEXT("/Game/ParagonSparrow/FX/Particles/Sparrow/Abilities/Primary/FX/P_Sparrow_HitHero.P_Sparrow_HitHero"));
 	if (P_Hit.Succeeded())
 	{
-		HitEffect->SetTemplate(P_Hit.Object);
-		HitEffect->bAutoActivate = false;
+		
 	}
+	*/
+
+	HitEffect->bAutoActivate = false;
 
 	InitialLifeSpan = 3.f;
 

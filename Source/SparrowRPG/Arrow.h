@@ -4,8 +4,6 @@
 
 #include "SparrowRPG.h"
 #include "GameFramework/Actor.h"
-#include "Particles/ParticleSystemComponent.h"
-#include "GameFramework/ProjectileMovementComponent.h"
 #include "Arrow.generated.h"
 
 UCLASS()
@@ -17,17 +15,17 @@ public:
 	// Sets default values for this actor's properties
 	AArrow();
 
-	UPROPERTY(VisibleDefaultsOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UStaticMeshComponent* Mesh;
 
 	UPROPERTY(VisibleAnywhere, Category = "Movement")
-	UProjectileMovementComponent* ProjectileMovementComponent;
+	class UProjectileMovementComponent* ProjectileMovementComponent;
 
 	UPROPERTY(EditDefaultsOnly)
 	UBoxComponent* Box;
 
-	UPROPERTY(VisibleAnywhere, Category = "Effect")
-	UParticleSystemComponent* HitEffect;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Effect")
+	class UParticleSystemComponent* HitEffect;
 
 	void Fire(const FVector& ShootDirection);
 

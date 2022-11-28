@@ -9,6 +9,7 @@
 /**
  * 
  */
+
 DECLARE_MULTICAST_DELEGATE(FResetComboCheckDelegate);
 DECLARE_MULTICAST_DELEGATE(FLoadingCheck);
 DECLARE_MULTICAST_DELEGATE(FFireCheck);
@@ -20,22 +21,25 @@ class SPARROWRPG_API USparrowAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadOnly)
 	class ASparrowRPGCharacter* Character;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
+	class AArcherCharacter* ArcherCharacter;
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	UCharacterMovementComponent* MovementComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector Velocity;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	float GroundSpeed;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool ShouldMove;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	bool IsFalling;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -50,9 +54,6 @@ public:
 	UFUNCTION()
 	void TurnInPlace(float DeltaTime);
 
-	
-
-
 	FRotator MovingRotation;
 	FRotator LastMovingRotation;
 	float DistanceCurve;
@@ -60,9 +61,8 @@ public:
 	float DeltaDistanceCurve;
 	float AbsRootYawOffset;
 	float YawExcess;
-	
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Montage")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	UAnimMontage* AttackMontage;
 
 	FResetComboCheckDelegate ResetComboCheck;
@@ -85,7 +85,7 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void PlayAttackMontage(FName sectionName, float playRate);
-	
+
 	void PlayMontage(FString name);
 
 	
@@ -99,5 +99,6 @@ public:
 	USparrowAnimInstance();
 	//virtual void NativeUpdateAnimation(float fDeltaSeconds) override;
 	virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;
+	virtual void NativeUpdateAnimation(float DeltaTime) override;
 	virtual void NativeInitializeAnimation() override;
 };

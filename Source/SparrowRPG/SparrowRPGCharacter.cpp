@@ -5,9 +5,12 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "SparrowAnimInstance.h"
+#include "Arrow.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "EnhancedInputComponent.h"
 
 //////////////////////////////////////////////////////////////////////////
 // ASparrowRPGCharacter
@@ -57,12 +60,14 @@ ASparrowRPGCharacter::ASparrowRPGCharacter()
 
 	GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
 
+	/*
 	static ConstructorHelpers::FClassFinder<UAnimInstance>
-		SPARROW_ANIM(TEXT("/Game/Archer/Blueprints/ABP_Archer.ABP_Archer_C"));
+		SPARROW_ANIM(TEXT("/Game/ThirdPerson/Blueprints/BP_ThirdPersonCharacter.BP_ThirdPersonCharacter_C"));
 	if (SPARROW_ANIM.Succeeded())
 	{
 		GetMesh()->SetAnimInstanceClass(SPARROW_ANIM.Class);
 	}
+	*/
 
 	MyTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Timeline"));
 
@@ -70,6 +75,7 @@ ASparrowRPGCharacter::ASparrowRPGCharacter()
 
 	XOffset = 50.f;
 
+	
 
 	CanFire = true;
 	fLTime = 0.f;
@@ -84,6 +90,13 @@ void ASparrowRPGCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 {
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
+
+	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ASparrowRPGCharacter::Move);
+	}
+
+	/*
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	//PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASparrowRPGCharacter::Load);
 	//PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASparrowRPGCharacter::Fire);
@@ -104,6 +117,9 @@ void ASparrowRPGCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	// handle touch devices
 	PlayerInputComponent->BindTouch(IE_Pressed, this, &ASparrowRPGCharacter::TouchStarted);
 	PlayerInputComponent->BindTouch(IE_Released, this, &ASparrowRPGCharacter::TouchStopped);
+	*/
+
+
 }
 
 void ASparrowRPGCharacter::PostInitializeComponents()
@@ -148,6 +164,22 @@ void ASparrowRPGCharacter::PostInitializeComponents()
 	
 	
 	
+}
+
+void ASparrowRPGCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(ArcherMappingContext, 0);
+		}
+	}
+
+
+
 }
 
 void ASparrowRPGCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
@@ -270,6 +302,15 @@ void ASparrowRPGCharacter::Fire()
 
 
 	
+}
+
+void ASparrowRPGCharacter::Move(const FInputActionValue& value)
+{
+	const bool CurrentValue = value.Get<bool>();
+	if (CurrentValue)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("IA_Move Triggered"));
+	}
 }
 
 

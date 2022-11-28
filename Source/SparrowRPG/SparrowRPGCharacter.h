@@ -4,8 +4,8 @@
 
 #include "SparrowRPG.h"
 #include "GameFramework/Character.h"
-#include "Arrow.h"
 #include "Runtime/Engine/Classes/Components/TimelineComponent.h"
+#include "InputActionValue.h"
 #include "SparrowRPGCharacter.generated.h"
 
 UCLASS(config=Game)
@@ -40,8 +40,20 @@ public:
 	bool Loading;
 	bool IsZooming;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class USparrowAnimInstance* Anim;
+
+
+	//
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input)
+	class UInputMappingContext* ArcherMappingContext;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	class UInputAction* MoveAction;
+
+	void Move(const FInputActionValue& value);
+	//
+
 
 	float fLTime;
 	float fLastTime;
@@ -99,6 +111,7 @@ protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void PostInitializeComponents() override;
+	virtual void BeginPlay() override;
 	
 	// End of APawn interface
 

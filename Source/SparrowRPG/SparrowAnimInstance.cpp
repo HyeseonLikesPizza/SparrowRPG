@@ -3,6 +3,8 @@
 
 #include "SparrowAnimInstance.h"
 #include "SparrowRPGCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Characters/ArcherCharacter.h"
 #include "Kismet/KismetMathLibrary.h"
 
 
@@ -10,6 +12,7 @@
 
 USparrowAnimInstance::USparrowAnimInstance()
 {
+	/*
 	static ConstructorHelpers::FObjectFinder<UAnimMontage>
 		ATTACK_MONTAGE(TEXT("/Game/ParagonSparrow/Characters/Heroes/Sparrow/Animations/Primary_Fire_Med_Montage.Primary_Fire_Med_Montage"));
 
@@ -17,6 +20,7 @@ USparrowAnimInstance::USparrowAnimInstance()
 	{
 		AttackMontage = ATTACK_MONTAGE.Object;
 	}
+	*/
 
 	//CanFire = true;
 }
@@ -25,20 +29,19 @@ void USparrowAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
 
-	Character = Cast<ASparrowRPGCharacter>(GetOwningActor());
+	Character = Cast<ASparrowRPGCharacter>(TryGetPawnOwner());
 	if (Character)
 	{
-		MovementComponent = Cast<UCharacterMovementComponent>(Character->GetMovementComponent());
+		MovementComponent = Character->GetCharacterMovement();
 	}
-
 
 }
 
 
-
-
 void USparrowAnimInstance::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 {
+	Super::NativeThreadSafeUpdateAnimation(DeltaSeconds);
+	
 	if (Character)
 	{
 		CalculateGroundSpeed();
@@ -47,7 +50,20 @@ void USparrowAnimInstance::NativeThreadSafeUpdateAnimation(float DeltaSeconds)
 		CalculateYawOffset();
 		TurnInPlace(DeltaSeconds);
 	}
+	
 }
+
+void USparrowAnimInstance::NativeUpdateAnimation(float DeltaTime)
+{
+	Super::NativeUpdateAnimation(DeltaTime);
+
+	if (MovementComponent)
+	{
+		CalculateGroundSpeed();
+		CalculateIsFalling();
+	}
+}
+
 
 void USparrowAnimInstance::PlayMontage(FString name)
 {
@@ -58,9 +74,9 @@ void USparrowAnimInstance::PlayMontage(FString name)
 
 void USparrowAnimInstance::CalculateGroundSpeed()
 {
-	
 	Velocity = MovementComponent->GetLastUpdateVelocity();
-	GroundSpeed = FVector(Velocity.X, Velocity.Y, 0).Length();
+	GroundSpeed = UKismetMathLibrary::VSizeXY(MovementComponent->Velocity);
+	//UE_LOG(LogTemp, Warning, TEXT("Ground Speed : %f"), GroundSpeed);
 }
 
 void USparrowAnimInstance::CalculateShouldMove()
@@ -103,9 +119,6 @@ void USparrowAnimInstance::TurnInPlace(float DeltaTime)
 		FRotator Delta;
 		Delta = UKismetMathLibrary::NormalizedDeltaRotator(MovingRotation, LastMovingRotation);
 		RootYawOffset = RootYawOffset - Delta.Yaw;
-
-		//if (GEngine)
-		//	GEngine->AddOnScreenDebugMessage(1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Root Yaw Offset : %f"), RootYawOffset));
 
 
 	}
