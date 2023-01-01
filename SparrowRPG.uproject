@@ -10,7 +10,8 @@
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
 				"Engine",
-				"ControlRig"
+				"ControlRig",
+				"UMG"
 			]
 		}
 	],
@@ -24,6 +25,10 @@
 		},
 		{
 			"Name": "EnhancedInput",
+			"Enabled": true
+		},
+		{
+			"Name": "Metasound",
 			"Enabled": true
 		}
 	]
