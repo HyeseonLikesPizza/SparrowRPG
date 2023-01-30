@@ -61,10 +61,12 @@ void AArcherCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	}
 }
 
-void AArcherCharacter::GetHit_Implementation(const FVector& ImpactPoint)
+void AArcherCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
 {
-	PlayHitSound(ImpactPoint);
-	SpawnHitParticles(ImpactPoint);
+	Super::GetHit_Implementation(ImpactPoint, Hitter);
+
+	SetWeaponCollisionEnabled(ECollisionEnabled::NoCollision);
+	ActionState = EActionState::EAS_HitReaction;
 }
 
 void AArcherCharacter::BeginPlay()
@@ -213,6 +215,11 @@ void AArcherCharacter::PlayEquipMontage(const FName& SectionName)
 }
 
 void AArcherCharacter::FinishEquipping()
+{
+	ActionState = EActionState::EAS_Unoccupied;
+}
+
+void AArcherCharacter::HitReactEnd()
 {
 	ActionState = EActionState::EAS_Unoccupied;
 }
