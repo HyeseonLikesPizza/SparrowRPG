@@ -10,18 +10,6 @@ UEchoAnimInstance::UEchoAnimInstance()
 {
 }
 
-void UEchoAnimInstance::NativeUpdateAnimation(float DeltaTime)
-{
-	Super::NativeUpdateAnimation(DeltaTime);
-
-	if (EchoMovementComponent)
-	{
-		GroundSpeed = UKismetMathLibrary::VSizeXY(EchoMovementComponent->Velocity);
-		IsFalling = EchoMovementComponent->IsFalling();
-		CharacterState = EchoCharacter->GetCharacterState();
-	}
-}
-
 void UEchoAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
@@ -31,3 +19,20 @@ void UEchoAnimInstance::NativeInitializeAnimation()
 		EchoMovementComponent = EchoCharacter->GetCharacterMovement();
 	}
 }
+
+
+void UEchoAnimInstance::NativeUpdateAnimation(float DeltaTime)
+{
+	Super::NativeUpdateAnimation(DeltaTime);
+
+	if (EchoMovementComponent)
+	{
+		GroundSpeed = UKismetMathLibrary::VSizeXY(EchoMovementComponent->Velocity);
+		IsFalling = EchoMovementComponent->IsFalling();
+		CharacterState = EchoCharacter->GetCharacterState();
+		ActionState = EchoCharacter->GetActionState();
+		DeathPose = EchoCharacter->GetDeathPose();
+		IsDead = ActionState == EActionState::EAS_Dead;
+	}
+}
+

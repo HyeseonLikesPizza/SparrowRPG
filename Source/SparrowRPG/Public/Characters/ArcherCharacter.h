@@ -6,6 +6,7 @@
 #include "InputActionValue.h"
 #include "BaseCharacter.h"
 #include "CharacterTypes.h"
+#include "Interfaces/PickupInterface.h"
 #include "ArcherCharacter.generated.h"
 
 class UInputMappingContext;
@@ -15,17 +16,25 @@ class UCameraComponent;
 class UGroomComponent;
 class AItem;
 class UAnimMontage;
-
+class USparrowOverlay;
+class ASoul;
+class ATreasure;
 
 UCLASS()
-class SPARROWRPG_API AArcherCharacter : public ABaseCharacter
+class SPARROWRPG_API AArcherCharacter : public ABaseCharacter, public IPickupInterface
 {
 	GENERATED_BODY()
 
 public:
 	AArcherCharacter();
+	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void Jump() override;
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter) override;
+	virtual void SetOverlappingItem(AItem* Item) override;
+	virtual void AddSouls(ASoul* Soul) override;
+	virtual void AddGold(class ATreasure* Treasure) override;
 
 protected:
 
@@ -40,12 +49,16 @@ protected:
 	/* Combat */
 	void EquipWeapon(AWeapon* Weapon);
 	virtual void AttackEnd() override;
+	virtual void DodgeEnd() override;
 	virtual bool CanAttack() override;
 	bool CanDisarm();
 	bool CanArm();
 	void Disarm();
 	void Arm();
 	void PlayEquipMontage(const FName& SectionName);
+	virtual void Die_Implementation() override;
+	bool HasEnoughStamina();
+	bool IsOccupied();
 
 	UFUNCTION(BlueprintCallable)
 	void AttachWeaponToBack();
@@ -82,6 +95,10 @@ protected:
 	UInputAction* DodgeAction;
 
 private:
+	bool IsUnoccupied();
+	void InitializeSparrowOverlay();
+	void SetHUDHealth();
+
 	/* 캐릭터 컴포넌트 */
 
 	UPROPERTY(VisibleAnywhere)
@@ -107,9 +124,11 @@ private:
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	EActionState ActionState = EActionState::EAS_Unoccupied;
 
+	UPROPERTY()
+	USparrowOverlay* SparrowOverlay;
+
 
 public:
-	FORCEINLINE void SetOverlappingItem(AItem* Item) { OverlappingItem = Item; }
 	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
-
+	FORCEINLINE EActionState GetActionState() const { return ActionState; }
 };

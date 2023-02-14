@@ -33,20 +33,16 @@ protected:
 	/* </AActor> */
 
 	/* <ABaseCharacter> */
-	virtual void Die() override;
+	virtual void Die_Implementation() override;
+	void SpawnSoul();
 	virtual void Attack() override;
 	virtual bool CanAttack() override;
 	virtual void AttackEnd() override;
 	virtual void HandleDamage(float DamageAmount) override;
-	virtual int32 PlayDeathMontage() override;
 	/* </ABaseCharacter> */
 
-	UPROPERTY(BlueprintReadOnly)
-	TEnumAsByte<EDeathPose> DeathPose;
-
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	EEnemyState EnemyState = EEnemyState::EES_Patrolling;
-
 
 private:
 
@@ -62,7 +58,7 @@ private:
 	void ChaseTarget();
 	bool IsOutsideCombatRadius();
 	bool IsOutsideAttackRadius();
-	bool InsideAttackRadius();
+	bool IsInsideAttackRadius();
 	bool IsChasing();
 	bool IsAttacking();
 	bool IsDead();
@@ -85,17 +81,17 @@ private:
 
 	UPawnSensingComponent* PawnSensing;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = Combat)
 	TSubclassOf<AWeapon> WeaponClass;
 
-	UPROPERTY()
-	AActor* CombatTarget;
+	UPROPERTY(EditAnywhere, Category = Combat)
+	double CombatRadius = 500.f;
 
-	UPROPERTY(EditAnywhere)
-	double CombatRadius = 1000.f;
-
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = Combat)
 	double AttackRadius = 150.f;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	double AcceptanceRadius = 50.f;
 
 	UPROPERTY()
 	class AAIController* EnemyController;
@@ -135,7 +131,8 @@ private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	float DeathLifeSpan = 8.f;
 
-	
+	UPROPERTY(EditAnywhere, Category = Combat)
+	TSubclassOf<class ASoul> SoulClass;
 
 
 
