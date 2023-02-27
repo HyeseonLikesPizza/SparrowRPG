@@ -11,7 +11,8 @@
 			"AdditionalDependencies": [
 				"Engine",
 				"ControlRig",
-				"UMG"
+				"UMG",
+				"CoreUObject"
 			]
 		}
 	],

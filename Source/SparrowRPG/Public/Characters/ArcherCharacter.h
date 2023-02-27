@@ -19,6 +19,7 @@ class UAnimMontage;
 class USparrowOverlay;
 class ASoul;
 class ATreasure;
+class ULoadWidget;
 
 UCLASS()
 class SPARROWRPG_API AArcherCharacter : public ABaseCharacter, public IPickupInterface
@@ -33,8 +34,36 @@ public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter) override;
 	virtual void SetOverlappingItem(AItem* Item) override;
+
 	virtual void AddSouls(ASoul* Soul) override;
 	virtual void AddGold(class ATreasure* Treasure) override;
+	void SetCameraTransform(FTransform Transform);
+	FTransform GetCameraTransform() const;
+	void SetSpringArmTransform(FTransform Transform);
+	FTransform GetSpringArmTransform() const;
+	void SetAttributeComponent(UAttributeComponent* Component);
+	void LoadGold(int32 gold);
+	void LoadSouls(int32 NumberOfSouls);
+	void LoadStamina(float Stamina, float MaxStamina);
+	void LoadHealth(float Health, float MaxHealth);
+	void LoadDodgeCost(float NewCost);
+	void LoadStaminaRegenRate(float NewRate);
+	void LoadActionState(EActionState state);
+	void LoadCharacterState(ECharacterState state);
+	void LoadEquippedWeapon(AWeapon* weapon);
+	void LoadPlayerName(FString name);
+	void LoadPlayerLevel(int32 level);
+	void LoadPlayerPlace(FString place);
+	void LoadPlayTime(float playtime);
+	void EquipWeapon(AWeapon* Weapon, bool PlaySound = true);
+	void RemoveWeapon();
+
+	UFUNCTION(BlueprintCallable)
+	void AttachWeaponToBack();
+
+	UFUNCTION(BlueprintCallable)
+	void AttachWeaponToHand();
+	
 
 protected:
 
@@ -46,8 +75,19 @@ protected:
 	void EKeyPressed();
 	virtual void Attack() override;
 
+	UFUNCTION(BlueprintNativeEvent)
+	void SaveGame();
+
+	void LoadGame();
+
+	UFUNCTION(BlueprintCallable)
+	void HideLoadWidget(APlayerController* PlayerController);
+
+	UFUNCTION(BlueprintCallable)
+	void ShowLoadWidget(APlayerController* PlayerController);
+
 	/* Combat */
-	void EquipWeapon(AWeapon* Weapon);
+
 	virtual void AttackEnd() override;
 	virtual void DodgeEnd() override;
 	virtual bool CanAttack() override;
@@ -59,18 +99,27 @@ protected:
 	virtual void Die_Implementation() override;
 	bool HasEnoughStamina();
 	bool IsOccupied();
-
-	UFUNCTION(BlueprintCallable)
-	void AttachWeaponToBack();
-
-	UFUNCTION(BlueprintCallable)
-	void AttachWeaponToHand();
+	void SetPlayerPlace(FString place);
+	void SetPlayTime(float playtime);
 
 	UFUNCTION(BlueprintCallable)
 	void FinishEquipping();
 
 	UFUNCTION(BlueprintCallable)
 	void HitReactEnd();
+
+	UPROPERTY()
+	FString PlayerName;
+
+	UPROPERTY()
+	int32 PlayerLevel;
+
+	UPROPERTY()
+	FString PlayerPlace;
+
+	UPROPERTY()
+	float PlayTime;
+
 
 	/* Advanced Input */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
@@ -93,6 +142,14 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* DodgeAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* SaveGameAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* LoadGameAction;
+
+
 
 private:
 	bool IsUnoccupied();
@@ -119,6 +176,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = Montages)
 	UAnimMontage* EquipMontage;
 
+	UPROPERTY(VisibleAnywhere)
 	ECharacterState CharacterState = ECharacterState::ECS_Unequipped;
 
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
@@ -127,8 +185,18 @@ private:
 	UPROPERTY()
 	USparrowOverlay* SparrowOverlay;
 
+	UPROPERTY()
+	ULoadWidget* LoadWidget;
+
+	float startSeconds;
 
 public:
 	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
 	FORCEINLINE EActionState GetActionState() const { return ActionState; }
+	FORCEINLINE UAttributeComponent* GetAttributeComponent() const { return Attributes; }
+	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
+	FORCEINLINE float GetPlayTime() const { return PlayTime; }
+	FORCEINLINE int32 GetPlayerLevel() const { return PlayerLevel; }
+	FORCEINLINE FString GetPlayerName() const { return PlayerName; }
+	FORCEINLINE FString GetPlayerPlace() const { return PlayerPlace; }
 };

@@ -254,3 +254,13 @@ void ABaseCharacter::SetWeaponCollisionEnabled(ECollisionEnabled::Type Collision
 	}
 }
 
+void ABaseCharacter::SetName(FString name)
+{
+	Name = name;
+}
+
+void ABaseCharacter::SetLevel(int32 level)
+{
+	Level = level;
+}
+

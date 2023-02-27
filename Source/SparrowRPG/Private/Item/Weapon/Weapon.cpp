@@ -33,15 +33,16 @@ void AWeapon::BeginPlay()
 	
 }
 
-void AWeapon::Equip(USceneComponent* InParent, FName InSocketName, AActor* NewOwner, APawn* NewInstigator)
+void AWeapon::Equip(USceneComponent* InParent, FName InSocketName, AActor* NewOwner, APawn* NewInstigator, bool PlaySound)
 {
 	ItemState = EItemState::EIS_Equipped;
 	SetOwner(NewOwner);
 	SetInstigator(NewInstigator);
 	AttachMeshToComponent(InParent, InSocketName);
 	DisableCollisionSphere();
-	PlayEquipSound();
 	DeactivateEmbers();
+	if (PlaySound)
+		PlayEquipSound();
 }
 
 void AWeapon::DeactivateEmbers()
@@ -73,6 +74,12 @@ void AWeapon::AttachMeshToComponent(USceneComponent* InParent, const FName& InSo
 {
 	FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, true);
 	ItemMesh->AttachToComponent(InParent, TransformRules, InSocketName);
+}
+
+void AWeapon::DetachWeapon()
+{
+	FDetachmentTransformRules TransformRules(EDetachmentRule::KeepWorld, false);
+	ItemMesh->DetachFromComponent(TransformRules);
 }
 
 void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

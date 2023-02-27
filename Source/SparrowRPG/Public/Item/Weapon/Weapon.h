@@ -20,11 +20,12 @@ class SPARROWRPG_API AWeapon : public AItem
 	
 public:
 	AWeapon();
-	void Equip(USceneComponent* InParent, FName InSocketName, AActor* NewOwner, APawn* NewInstigator);
+	void Equip(USceneComponent* InParent, FName InSocketName, AActor* NewOwner, APawn* NewInstigator, bool PlaySound = true);
 	void DeactivateEmbers();
 	void DisableCollisionSphere();
 	void PlayEquipSound();
 	void AttachMeshToComponent(USceneComponent* InParent, const FName& InSocketName);
+	void DetachWeapon();
 	TArray<AActor*> IgnoreActors;
 
 protected:

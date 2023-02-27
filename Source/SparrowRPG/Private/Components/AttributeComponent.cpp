@@ -60,3 +60,43 @@ void UAttributeComponent::AddGold(int32 AmountOfGold)
 {
 	Gold += AmountOfGold;
 }
+
+void UAttributeComponent::SetGold(int32 AmountOfGold)
+{
+	Gold = AmountOfGold;
+}
+
+void UAttributeComponent::SetSouls(int32 NumberOfSouls)
+{
+	Souls = NumberOfSouls;
+}
+
+void UAttributeComponent::SetHealth(float NewHealth)
+{
+	Health = NewHealth;
+}
+
+void UAttributeComponent::SetMaxHealth(float NewMaxHealth)
+{
+	MaxHealth = NewMaxHealth;
+}
+
+void UAttributeComponent::SetStamina(float NewStamina)
+{
+	Stamina = NewStamina;
+}
+
+void UAttributeComponent::SetMaxStamina(float NewMaxStamina)
+{
+	MaxStamina = NewMaxStamina;
+}
+
+void UAttributeComponent::SetDodgeCost(float NewCost)
+{
+	DodgeCost = NewCost;
+}
+
+void UAttributeComponent::SetStaminaRegenRate(float NewRate)
+{
+	StaminaRegenRate = NewRate;
+}

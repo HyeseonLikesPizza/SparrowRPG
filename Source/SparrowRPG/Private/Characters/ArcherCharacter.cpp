@@ -16,6 +16,8 @@
 #include "HUD/SparrowOverlay.h"
 #include "Item/Soul.h"
 #include "Item/Treasure.h"
+#include "Gameplay/EchoPlayerController.h"
+#include "HUD/LoadWidget.h"
 
 
 AArcherCharacter::AArcherCharacter()
@@ -49,6 +51,11 @@ AArcherCharacter::AArcherCharacter()
 	Eyebrows = CreateDefaultSubobject<UGroomComponent>(TEXT("Eyebrows"));
 	Eyebrows->SetupAttachment(GetMesh());
 	Eyebrows->AttachmentName = FString("head");
+
+	PlayerName = FString("Echo");
+	PlayerLevel = 1;
+	PlayTime = 0.f;
+	PlayerPlace = FString("Test Map");
 }
 
 void AArcherCharacter::Tick(float DeltaTime)
@@ -58,6 +65,8 @@ void AArcherCharacter::Tick(float DeltaTime)
 		Attributes->RegenStamina(DeltaTime);
 		SparrowOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
 	}
+
+	PlayTime = FPlatformTime::Seconds() - startSeconds;
 }
 
 void AArcherCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -72,6 +81,8 @@ void AArcherCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(EKeyAction, ETriggerEvent::Triggered, this, &AArcherCharacter::EKeyPressed);
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &AArcherCharacter::Attack);
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Triggered, this, &AArcherCharacter::Dodge);
+		EnhancedInputComponent->BindAction(SaveGameAction, ETriggerEvent::Triggered, this, &AArcherCharacter::SaveGame_Implementation);
+		EnhancedInputComponent->BindAction(LoadGameAction, ETriggerEvent::Triggered, this, &AArcherCharacter::LoadGame);
 	}
 }
 
@@ -127,6 +138,116 @@ void AArcherCharacter::AddGold(ATreasure* Treasure)
 	}
 }
 
+void AArcherCharacter::SetCameraTransform(FTransform Transform)
+{
+	ViewCamera->SetRelativeTransform(Transform);
+}
+
+FTransform AArcherCharacter::GetCameraTransform() const
+{
+	return ViewCamera->GetRelativeTransform();
+}
+
+void AArcherCharacter::SetSpringArmTransform(FTransform Transform)
+{
+	CameraBoom->SetRelativeTransform(Transform);
+}
+
+FTransform AArcherCharacter::GetSpringArmTransform() const
+{
+	return CameraBoom->GetRelativeTransform();
+}
+
+void AArcherCharacter::SetAttributeComponent(UAttributeComponent* Component)
+{
+	Attributes = Component;
+}
+
+void AArcherCharacter::LoadGold(int32 gold)
+{
+	if (SparrowOverlay && Attributes)
+	{
+		Attributes->SetGold(gold);
+		SparrowOverlay->SetGold(Attributes->GetGold());
+	}
+}
+
+void AArcherCharacter::LoadSouls(int32 NumberOfSouls)
+{
+	if (SparrowOverlay && Attributes)
+	{
+		Attributes->SetSouls(NumberOfSouls);
+		SparrowOverlay->SetSouls(Attributes->GetSouls());
+	}
+}
+
+void AArcherCharacter::LoadStamina(float Stamina, float MaxStamina)
+{
+	Attributes->SetStamina(Stamina);
+	Attributes->SetMaxStamina(MaxStamina);
+
+	if (SparrowOverlay && Attributes)
+	{
+		SparrowOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
+	}
+}
+
+void AArcherCharacter::LoadHealth(float Health, float MaxHealth)
+{
+	Attributes->SetHealth(Health);
+	Attributes->SetMaxHealth(MaxHealth);
+
+	if (SparrowOverlay && Attributes)
+	{
+		SparrowOverlay->SetHealthBarPercent(Attributes->GetHealthPercent());
+	}
+}
+
+void AArcherCharacter::LoadDodgeCost(float NewCost)
+{
+	Attributes->SetDodgeCost(NewCost);
+}
+
+void AArcherCharacter::LoadStaminaRegenRate(float NewRate)
+{
+	Attributes->SetStaminaRegenRate(NewRate);
+}
+
+void AArcherCharacter::LoadActionState(EActionState state)
+{
+	ActionState = state;
+}
+
+void AArcherCharacter::LoadCharacterState(ECharacterState state)
+{
+	CharacterState = state;
+}
+
+void AArcherCharacter::LoadEquippedWeapon(AWeapon* weapon)
+{
+	EquippedWeapon = weapon;
+}
+
+void AArcherCharacter::LoadPlayerName(FString name)
+{
+	PlayerName = name;
+}
+
+void AArcherCharacter::LoadPlayerLevel(int32 level)
+{
+	PlayerLevel = level;
+}
+
+void AArcherCharacter::LoadPlayerPlace(FString place)
+{
+	PlayerPlace = place;
+}
+
+void AArcherCharacter::LoadPlayTime(float playtime)
+{
+	PlayTime = playtime;
+}
+
 void AArcherCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -142,6 +263,10 @@ void AArcherCharacter::BeginPlay()
 	Tags.Add(FName("EngageableTarget"));
 
 	InitializeSparrowOverlay();
+
+	startSeconds = FPlatformTime::Seconds();
+
+
 }
 
 void AArcherCharacter::Move(const FInputActionValue& value)
@@ -189,7 +314,6 @@ void AArcherCharacter::EKeyPressed()
 		if (EquippedWeapon)
 		{
 			EquippedWeapon->Destroy();
-
 		}
 		EquipWeapon(OverlappingWeapon);
 	}
@@ -217,12 +341,95 @@ void AArcherCharacter::Attack()
 	}
 }
 
-void AArcherCharacter::EquipWeapon(AWeapon* Weapon)
+void AArcherCharacter::SaveGame_Implementation()
 {
-	Weapon->Equip(GetMesh(), FName("RightHandSocket"), this, this);
+		
+	AEchoPlayerController* PlayerController = Cast<AEchoPlayerController>(GetController());
+
+	if (PlayerController && ActionState == EActionState::EAS_Unoccupied)
+	{
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Game Saved")));
+
+		PlayerController->SaveGame();
+	}
+	else
+	{
+		if (GEngine)
+			GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Yellow, FString::Printf(TEXT("Not Saved")));
+	}
+	
+}
+
+void AArcherCharacter::LoadGame()
+{
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	if (PlayerController)
+	{
+		if (!LoadWidget)
+		{
+			ASparrowHUD* SparrowHUD = Cast<ASparrowHUD>(PlayerController->GetHUD());
+			if (SparrowHUD)
+			{
+				LoadWidget = SparrowHUD->GetLoadWidget();
+				if (LoadWidget)
+				{
+					LoadWidget->AddToViewport();
+					ShowLoadWidget(PlayerController);
+				}
+			}
+		}
+		else
+		{
+			if (LoadWidget->IsVisible())
+			{
+				HideLoadWidget(PlayerController);
+			}
+			else
+			{
+				LoadWidget->RefreshListBox();
+				ShowLoadWidget(PlayerController);
+			}
+
+		}
+	}
+
+}
+
+void AArcherCharacter::HideLoadWidget(APlayerController* PlayerController)
+{
+	LoadWidget->SetVisibility(ESlateVisibility::Hidden);
+	PlayerController->SetInputMode(FInputModeGameOnly());
+	PlayerController->bShowMouseCursor = false;
+	PlayerController->bEnableClickEvents = false;
+	PlayerController->bEnableMouseOverEvents = false;
+}
+
+void AArcherCharacter::ShowLoadWidget(APlayerController* PlayerController)
+{
+	LoadWidget->SetVisibility(ESlateVisibility::Visible);
+	PlayerController->SetInputMode(FInputModeGameAndUI());
+	PlayerController->bShowMouseCursor = true;
+	PlayerController->bEnableClickEvents = true;
+	PlayerController->bEnableMouseOverEvents = true;
+}
+
+void AArcherCharacter::EquipWeapon(AWeapon* Weapon, bool PlaySound)
+{
+	Weapon->Equip(GetMesh(), FName("RightHandSocket"), this, this, PlaySound);
 	CharacterState = ECharacterState::ECS_EquippedOneHandedWeapon;
 	OverlappingItem = nullptr;
 	EquippedWeapon = Weapon;
+}
+
+void AArcherCharacter::RemoveWeapon()
+{
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->DetachWeapon();
+		EquippedWeapon = nullptr;
+		CharacterState = ECharacterState::ECS_Unequipped;
+	}
 }
 
 void AArcherCharacter::AttackEnd()
@@ -311,6 +518,16 @@ bool AArcherCharacter::HasEnoughStamina()
 bool AArcherCharacter::IsOccupied()
 {
 	return ActionState != EActionState::EAS_Unoccupied;
+}
+
+void AArcherCharacter::SetPlayerPlace(FString place)
+{
+	PlayerPlace = place;
+}
+
+void AArcherCharacter::SetPlayTime(float playtime)
+{
+	PlayTime = playtime;
 }
 
 void AArcherCharacter::FinishEquipping()

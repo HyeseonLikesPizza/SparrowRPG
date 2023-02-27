@@ -62,6 +62,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void SetWeaponCollisionEnabled(ECollisionEnabled::Type CollisionEnabled);
 
+	virtual void SetName(FString name);
+	virtual void SetLevel(int32 level);
+
 	UPROPERTY(VisibleAnywhere, Category = Weapon)
 	AWeapon* EquippedWeapon;
 
@@ -78,6 +81,12 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly)
 	TEnumAsByte<EDeathPose> DeathPose;
+
+	UPROPERTY(EditInstanceOnly)
+	FString Name;
+
+	UPROPERTY(EditInstanceOnly)
+	int32 Level;
 
 private:
 	void PlayMontageSection(UAnimMontage* Montage, const FName& SectionName);
@@ -109,4 +118,5 @@ private:
 
 public:
 	FORCEINLINE TEnumAsByte<EDeathPose> GetDeathPose() const { return DeathPose; }
+
 };

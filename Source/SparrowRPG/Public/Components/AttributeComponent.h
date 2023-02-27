@@ -21,6 +21,9 @@ protected:
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
+	FString PlayerName;
+
+	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
 	float Health;
 
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
@@ -52,8 +55,20 @@ public:
 	bool IsAlive();
 	void AddSouls(int32 NumberOfSouls);
 	void AddGold(int32 AmountOfGold);
+	void SetGold(int32 AmountOfGold);
+	void SetSouls(int32 NumberOfSouls);
+	void SetHealth(float NewHealth);
+	void SetMaxHealth(float NewMaxHealth);
+	void SetStamina(float NewStamina);
+	void SetMaxStamina(float NewMaxStamina);
+	void SetDodgeCost(float NewCost);
+	void SetStaminaRegenRate(float NewRate);
 	FORCEINLINE int32 GetGold() const { return Gold; }
 	FORCEINLINE int32 GetSouls() const { return Souls; }
 	FORCEINLINE float GetDodgeCost() const { return DodgeCost; }
+	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
+	FORCEINLINE float GetMaxStamina() const { return MaxStamina; }
 	FORCEINLINE float GetStamina() const { return Stamina; }
+	FORCEINLINE float GetStaminaRegenRate() const { return StaminaRegenRate; }
 };
