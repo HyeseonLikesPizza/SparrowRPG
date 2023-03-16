@@ -32,8 +32,10 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void Jump() override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	void ShieldTakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser);
 	virtual void GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter) override;
 	virtual void SetOverlappingItem(AItem* Item) override;
+
 
 	virtual void AddSouls(ASoul* Soul) override;
 	virtual void AddGold(class ATreasure* Treasure) override;
@@ -63,6 +65,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void AttachWeaponToHand();
+
+	bool bRightMouseClicked = false;
 	
 
 protected:
@@ -72,8 +76,13 @@ protected:
 	void Move(const FInputActionValue& value);
 	void Look(const FInputActionValue& value);
 	void Dodge();
+	void UseStaminaAndHUDUpdate(float Cost);
 	void EKeyPressed();
+	void RightMouseClicked();
+	void RightMouseReleased();
 	virtual void Attack() override;
+	void CounterAttack();
+	void Skill_1();
 
 	UFUNCTION(BlueprintNativeEvent)
 	void SaveGame();
@@ -101,6 +110,7 @@ protected:
 	bool IsOccupied();
 	void SetPlayerPlace(FString place);
 	void SetPlayTime(float playtime);
+	void Skill_SwordShield_CastingAndStrike();
 
 	UFUNCTION(BlueprintCallable)
 	void FinishEquipping();
@@ -119,6 +129,8 @@ protected:
 
 	UPROPERTY()
 	float PlayTime;
+
+
 
 
 	/* Advanced Input */
@@ -149,12 +161,19 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* LoadGameAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* RightMouseAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* Skill_1_Action;
 
 private:
 	bool IsUnoccupied();
 	void InitializeSparrowOverlay();
 	void SetHUDHealth();
+	void SpawnDefaultShield();
+	void SpawnDefaultWeapon();
+	void SpawnSwordShield();
 
 	/* 캐릭터 컴포넌트 */
 
@@ -176,11 +195,11 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = Montages)
 	UAnimMontage* EquipMontage;
 
+	UPROPERTY(EditDefaultsOnly, Category = Montages)
+	UAnimMontage* CastingStrikeMontage;
+
 	UPROPERTY(VisibleAnywhere)
 	ECharacterState CharacterState = ECharacterState::ECS_Unequipped;
-
-	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	EActionState ActionState = EActionState::EAS_Unoccupied;
 
 	UPROPERTY()
 	USparrowOverlay* SparrowOverlay;
@@ -188,7 +207,32 @@ private:
 	UPROPERTY()
 	ULoadWidget* LoadWidget;
 
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AWeapon> ShieldClass;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AWeapon> WeaponClass;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UCameraShakeBase> CameraShake;
+
 	float startSeconds;
+
+	bool bCounterAttack = false;
+
+	void SetCounterAttackEnable();
+	void SetCounterAttackDisable();
+
+	UPROPERTY(EditDefaultsOnly)
+	UAnimMontage* CounterAttackMontage;
+
+	FTimerHandle CounterAttackTimer;
+
+	float CounterAttackInputTime = 3.f;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UParticleSystem* CastingAndStrikeParticles;
+	
 
 public:
 	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }

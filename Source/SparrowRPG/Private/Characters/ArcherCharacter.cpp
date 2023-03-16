@@ -16,8 +16,12 @@
 #include "HUD/SparrowOverlay.h"
 #include "Item/Soul.h"
 #include "Item/Treasure.h"
+#include "Item/Weapon/Shield.h"
 #include "Gameplay/EchoPlayerController.h"
 #include "HUD/LoadWidget.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/CapsuleComponent.h"
+#include "../DebugMacros.h"
 
 
 AArcherCharacter::AArcherCharacter()
@@ -67,6 +71,10 @@ void AArcherCharacter::Tick(float DeltaTime)
 	}
 
 	PlayTime = FPlatformTime::Seconds() - startSeconds;
+
+	
+
+	
 }
 
 void AArcherCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -83,6 +91,9 @@ void AArcherCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Triggered, this, &AArcherCharacter::Dodge);
 		EnhancedInputComponent->BindAction(SaveGameAction, ETriggerEvent::Triggered, this, &AArcherCharacter::SaveGame_Implementation);
 		EnhancedInputComponent->BindAction(LoadGameAction, ETriggerEvent::Triggered, this, &AArcherCharacter::LoadGame);
+		EnhancedInputComponent->BindAction(RightMouseAction, ETriggerEvent::Triggered, this, &AArcherCharacter::RightMouseClicked);
+		EnhancedInputComponent->BindAction(RightMouseAction, ETriggerEvent::Completed, this, &AArcherCharacter::RightMouseReleased);
+		EnhancedInputComponent->BindAction(Skill_1_Action, ETriggerEvent::Triggered, this, &AArcherCharacter::Skill_1);
 	}
 }
 
@@ -96,10 +107,43 @@ void AArcherCharacter::Jump()
 
 float AArcherCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	HandleDamage(DamageAmount);
+	if (ActionState == EActionState::EAS_ShieldHitReaction) return DamageAmount;
 
+	HandleDamage(DamageAmount);
 	SetHUDHealth();
+	UE_LOG(LogTemp, Warning, TEXT("TakeDamage"));
+	UE_LOG(LogTemp, Warning, TEXT("TakeDamage - ActionState : %d"), ActionState);
+
 	return DamageAmount;
+}
+
+void AArcherCharacter::ShieldTakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StartCameraShake(CameraShake);
+	
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ShieldCounterParticles, GetActorLocation());
+	SetCounterAttackEnable();
+
+	/*
+	const int32 Selection = FMath::RandRange(0, 4);
+	if (Selection == 3)
+	{
+		if (Attributes->GetStamina() >= Attributes->GetMaxStamina() / 5)
+		{
+			UseStaminaAndHUDUpdate(Attributes->GetMaxStamina() / 5);
+			
+		}
+		else
+		{
+			HandleDamage(DamageAmount);
+			SetHUDHealth();
+			if (GEngine)
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("스태미나 없어서 방어 실패")));
+		}
+	}
+	*/
+	UE_LOG(LogTemp, Warning, TEXT("ShieldTakeDamage"));
+
 }
 
 void AArcherCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
@@ -107,8 +151,10 @@ void AArcherCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor*
 	Super::GetHit_Implementation(ImpactPoint, Hitter);
 
 	SetWeaponCollisionEnabled(ECollisionEnabled::NoCollision);
+	
 
-	if (Attributes && Attributes->GetHealthPercent() > 0.f)
+	if (Attributes && Attributes->GetHealthPercent() > 0.f
+		&& ActionState != EActionState::EAS_ShieldHitReaction)
 	{
 		ActionState = EActionState::EAS_HitReaction;
 	}
@@ -265,7 +311,7 @@ void AArcherCharacter::BeginPlay()
 	InitializeSparrowOverlay();
 
 	startSeconds = FPlatformTime::Seconds();
-
+	SpawnSwordShield();
 
 }
 
@@ -299,9 +345,14 @@ void AArcherCharacter::Dodge()
 	PlayDodgeMontage();
 	ActionState = EActionState::EAS_Dodge;
 
+	UseStaminaAndHUDUpdate(Attributes->GetDodgeCost());
+}
+
+void AArcherCharacter::UseStaminaAndHUDUpdate(float Cost)
+{
 	if (Attributes && SparrowOverlay)
 	{
-		Attributes->UseStamina(Attributes->GetDodgeCost());
+		Attributes->UseStamina(Cost);
 		SparrowOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
 	}
 }
@@ -330,14 +381,67 @@ void AArcherCharacter::EKeyPressed()
 	}
 }
 
+void AArcherCharacter::RightMouseClicked()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		if (AnimInstance->Montage_IsPlaying(ShieldMontage)
+			|| ActionState == EActionState::EAS_HitReaction
+			|| ActionState == EActionState::EAS_ShieldHitReaction) return;
+
+		PlayShieldBlockMontage();
+
+		if (IsDefending)
+			CounterAttack();
+	}
+	
+}
+
+void AArcherCharacter::RightMouseReleased()
+{
+	//UE_LOG(LogTemp, Warning, TEXT("released"));
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		if (AnimInstance->Montage_IsPlaying(ShieldMontage))
+			AnimInstance->Montage_Stop(0.25, ShieldMontage);
+
+		DisableBlock();
+	}
+}
+
 void AArcherCharacter::Attack()
 {
 	Super::Attack();
 
 	if (CanAttack())
 	{
-		PlayAttackMontage();
 		ActionState = EActionState::EAS_Attacking;
+		if (bCounterAttack)
+		{
+			CounterAttack();
+			return;
+		}
+		PlayAttackMontage();
+	
+	}
+
+}
+
+void AArcherCharacter::CounterAttack()
+{
+	PlayMontageSection(CounterAttackMontage, FName("Default"));
+	bCounterAttack = false;
+}
+
+void AArcherCharacter::Skill_1()
+{
+	
+	if (CharacterState == ECharacterState::ECS_EquippedOneHandedWeaponAndShield)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("skill1"));
+		Skill_SwordShield_CastingAndStrike();
 	}
 }
 
@@ -530,6 +634,17 @@ void AArcherCharacter::SetPlayTime(float playtime)
 	PlayTime = playtime;
 }
 
+void AArcherCharacter::Skill_SwordShield_CastingAndStrike()
+{
+	PlayMontageSection(CastingStrikeMontage, FName("Default"));
+
+	FVector Bottom = FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z - GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+	FVector Forward = Bottom + FVector(-10.f, -65.f, 0.f);
+	DRAW_SPHERE(Forward);
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), CastingAndStrikeParticles, Forward);
+
+}
+
 void AArcherCharacter::FinishEquipping()
 {
 	ActionState = EActionState::EAS_Unoccupied;
@@ -571,4 +686,50 @@ void AArcherCharacter::SetHUDHealth()
 	{
 		SparrowOverlay->SetHealthBarPercent(Attributes->GetHealthPercent());
 	}
+}
+
+void AArcherCharacter::SpawnDefaultShield()
+{
+	UWorld* World = GetWorld();
+	if (World && ShieldClass)
+	{
+		AShield* Shield = World->SpawnActor<AShield>(ShieldClass);
+		Shield->Equip(GetMesh(), FName("LeftArmSocket"), this, this, false);
+		EquippedShield = Shield;
+	}
+}
+
+void AArcherCharacter::SpawnDefaultWeapon()
+{
+	UWorld* World = GetWorld();
+	if (World && WeaponClass)
+	{
+		AWeapon* DefaultWeapon = World->SpawnActor<AWeapon>(WeaponClass);
+		EquipWeapon(DefaultWeapon, false);
+		//DefaultWeapon->Equip(GetMesh(), FName("WeaponSocket"), this, this, false);
+		//EquippedWeapon = DefaultWeapon;
+		//CharacterState = ECharacterState::ECS_EquippedOneHandedWeapon;
+	}
+}
+
+void AArcherCharacter::SpawnSwordShield()
+{
+	SpawnDefaultWeapon();
+	SpawnDefaultShield();
+	CharacterState = ECharacterState::ECS_EquippedOneHandedWeaponAndShield;
+}
+
+void AArcherCharacter::SetCounterAttackEnable()
+{
+	bCounterAttack = true;
+	GetWorldTimerManager().SetTimer(CounterAttackTimer, this, &AArcherCharacter::SetCounterAttackDisable, CounterAttackInputTime);
+
+	UE_LOG(LogTemp, Warning, TEXT("Counter Attack Enable"));
+
+}
+
+void AArcherCharacter::SetCounterAttackDisable()
+{
+	bCounterAttack = false;
+	UE_LOG(LogTemp, Warning, TEXT("Counter Attack Disable"));
 }

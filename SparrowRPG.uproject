@@ -12,7 +12,8 @@
 				"Engine",
 				"ControlRig",
 				"UMG",
-				"CoreUObject"
+				"CoreUObject",
+				"GameplayCameras"
 			]
 		}
 	],

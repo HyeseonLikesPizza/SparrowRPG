@@ -25,10 +25,13 @@ public:
 	void DisableCollisionSphere();
 	void PlayEquipSound();
 	void AttachMeshToComponent(USceneComponent* InParent, const FName& InSocketName);
+	void AttachMeshToActor(AActor* ParentActor, const FName& InSocketName);
 	void DetachWeapon();
 	TArray<AActor*> IgnoreActors;
 
 protected:
+	class AArcherCharacter* Player;
+
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
@@ -42,7 +45,6 @@ protected:
 	void CreateFields(const FVector& FieldLocation);
 
 private:
-
 	void BoxTrace(FHitResult& BoxHit);
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")

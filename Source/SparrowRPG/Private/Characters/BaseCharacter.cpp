@@ -3,7 +3,9 @@
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Item/Weapon/Weapon.h"
+#include "Item/Weapon/Shield.h"
 #include "Components/AttributeComponent.h"
+#include "Characters/EchoAnimInstance.h"
 #include "Kismet/GameplayStatics.h"
 
 
@@ -23,11 +25,15 @@ void ABaseCharacter::BeginPlay()
 
 void ABaseCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
 {
+	//if (ActionState == EActionState::EAS_HitReaction)
+	if (ActionState == EActionState::EAS_ShieldHitReaction)
+		return;
+
 	if (IsAlive() && Hitter)
 	{
-		DirectionalHitReact(Hitter->GetActorLocation());
+		DirectionalHitReact(Hitter->GetActorLocation(), this);
 	}
-	else
+	else if (!IsAlive() && !Hitter)
 	{
 		DisableMeshCollision();
 		Die();
@@ -117,12 +123,32 @@ void ABaseCharacter::PlayHitReactMontage(const FName& SectionName)
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && HitReactMontage)
 	{
+		if (AnimInstance->Montage_IsPlaying(HitShieldReactMontage)) return;
 		AnimInstance->Montage_Play(HitReactMontage);
 		AnimInstance->Montage_JumpToSection(SectionName, HitReactMontage);
 	}
 }
 
-void ABaseCharacter::DirectionalHitReact(const FVector& ImpactPoint)
+void ABaseCharacter::PlayHitShieldReactMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && HitShieldReactMontage)
+	{
+		PlayMontageSection(HitShieldReactMontage, FName("Default"));
+	}
+}
+
+void ABaseCharacter::PlayShieldBlockMontage()
+{
+	PlayMontageSection(ShieldMontage, FName("Block"));
+}
+
+void ABaseCharacter::PlayShieldBlockIdleMontage()
+{
+	PlayMontageSection(ShieldMontage, FName("BlockIdle"));
+}
+
+void ABaseCharacter::DirectionalHitReact(const FVector& ImpactPoint, AActor* Target)
 {
 	const FVector Forward = GetActorForwardVector();
 	const FVector ImpactLowered(ImpactPoint.X, ImpactPoint.Y, GetActorLocation().Z);
@@ -154,7 +180,26 @@ void ABaseCharacter::DirectionalHitReact(const FVector& ImpactPoint)
 		Section = FName("FromRight");
 	}
 
-	PlayHitReactMontage(Section);
+	if (Target != this)
+		UE_LOG(LogTemp, Warning, TEXT("direction : %s"), *Section.ToString());
+
+
+	if (Target == this)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Hit React Montage"));
+		PlayHitReactMontage(Section);
+	}
+	else if (Target != this && (Section == FName("FromFront") || Section == FName("FromRight")))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("!! Shield Montage !!"));
+		ActionState = EActionState::EAS_ShieldHitReaction;
+		
+		PlayHitShieldReactMontage();
+	}
+
+		
+
+
 
 	/*
 	UKismetSystemLibrary::DrawDebugArrow(this, GetActorLocation(), GetActorLocation() + CrossProduct * 100.f, 5.f, FColor::Cyan, 5.f);
@@ -173,9 +218,16 @@ void ABaseCharacter::PlayHitSound(const FVector& ImpactPoint)
 {
 	if (HitSound)
 	{
-		UGameplayStatics::PlaySoundAtLocation(
-			this, HitSound, ImpactPoint);
+		UGameplayStatics::PlaySoundAtLocation(this, HitSound, ImpactPoint);
 
+	}
+}
+
+void ABaseCharacter::PlayHitShieldSound(const FVector& ImpactPoint)
+{
+	if (ShieldHitSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, ShieldHitSound, ImpactPoint);
 	}
 }
 
@@ -183,9 +235,15 @@ void ABaseCharacter::SpawnHitParticles(const FVector& ImpactPoint)
 {
 	if (HitParticles && GetWorld())
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),
-			HitParticles, ImpactPoint);
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(),HitParticles, ImpactPoint);
+	}
+}
 
+void ABaseCharacter::SpawnHitShieldParticles(const FVector& ImpactPoint)
+{
+	if (ShieldHitParticles && GetWorld())
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ShieldHitParticles, ImpactPoint);
 	}
 }
 
@@ -205,13 +263,14 @@ void ABaseCharacter::PlayMontageSection(UAnimMontage* Montage, const FName& Sect
 		AnimInstance->Montage_Play(Montage);
 		AnimInstance->Montage_JumpToSection(SectionName, Montage);
 	}
+	
 }
 
 int32 ABaseCharacter::PlayRandomMontageSection(UAnimMontage* Montage, const TArray<FName>& SectionNames)
 {
 	if (SectionNames.Num() <= 0) return -1;
 	const int32 MaxSectionIndex = SectionNames.Num() - 1;
-	const int32 Selection = FMath::RandRange(0, MaxSectionIndex);
+	const int32 Selection = FMath::RandRange(1, MaxSectionIndex);
 	PlayMontageSection(Montage, SectionNames[Selection]);
 	return Selection;
 }
@@ -229,7 +288,13 @@ bool ABaseCharacter::IsAlive()
 void ABaseCharacter::DisableMeshCollision()
 {
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-} 
+}
+void ABaseCharacter::ShieldGetHit(const FVector& ImpactPoint, AActor* HitActor)
+{
+	DirectionalHitReact(ImpactPoint, HitActor);
+	PlayHitShieldSound(ImpactPoint);
+	SpawnHitShieldParticles(ImpactPoint);
+}
 
 void ABaseCharacter::AttackEnd()
 {
@@ -237,6 +302,19 @@ void ABaseCharacter::AttackEnd()
 
 void ABaseCharacter::DodgeEnd()
 {
+}
+
+void ABaseCharacter::EnableBlock()
+{
+	IsDefending = true;
+	//EquippedShield->SetShieldCollision();
+}
+
+void ABaseCharacter::DisableBlock()
+{
+	IsDefending = false;
+	ActionState = EActionState::EAS_Unoccupied;
+	//EquippedShield->SetShieldNoCollision();
 }
 
 void ABaseCharacter::Tick(float DeltaTime)

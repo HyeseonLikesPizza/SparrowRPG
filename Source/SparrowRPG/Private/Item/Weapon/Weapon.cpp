@@ -41,6 +41,7 @@ void AWeapon::Equip(USceneComponent* InParent, FName InSocketName, AActor* NewOw
 	AttachMeshToComponent(InParent, InSocketName);
 	DisableCollisionSphere();
 	DeactivateEmbers();
+	Player = Cast<AArcherCharacter>(GetOwner());
 	if (PlaySound)
 		PlayEquipSound();
 }
@@ -76,6 +77,12 @@ void AWeapon::AttachMeshToComponent(USceneComponent* InParent, const FName& InSo
 	ItemMesh->AttachToComponent(InParent, TransformRules, InSocketName);
 }
 
+void AWeapon::AttachMeshToActor(AActor* ParentActor, const FName& InSocketName)
+{
+	FAttachmentTransformRules TransformRules(EAttachmentRule::SnapToTarget, true);
+	this->AttachToActor(ParentActor, TransformRules, InSocketName);
+}
+
 void AWeapon::DetachWeapon()
 {
 	FDetachmentTransformRules TransformRules(EDetachmentRule::KeepWorld, false);
@@ -92,8 +99,9 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 	if (BoxHit.GetActor())
 	{
 		if (ActorIsSameType(BoxHit.GetActor())) return;
-		UGameplayStatics::ApplyDamage(BoxHit.GetActor(), Damage, GetInstigator()->GetController(), this, UDamageType::StaticClass());
+		UE_LOG(LogTemp, Warning, TEXT("BoxHit Actor : %s"), *BoxHit.GetActor()->GetName());
 		ExecuteGetHit(BoxHit);
+		UGameplayStatics::ApplyDamage(BoxHit.GetActor(), Damage, GetInstigator()->GetController(), this, UDamageType::StaticClass());
 		CreateFields(BoxHit.ImpactPoint);
 	}
 }
@@ -119,8 +127,8 @@ void AWeapon::BoxTrace(FHitResult& BoxHit)
 	const FVector End = BoxTraceEnd->GetComponentLocation();
 
 	TArray<AActor*> ActorsToIgnore;
-	ActorsToIgnore.Add(GetOwner());
-	ActorsToIgnore.Add(this);
+	ActorsToIgnore.AddUnique(GetOwner());
+	ActorsToIgnore.AddUnique(this);
 
 	for (AActor* Actor : IgnoreActors)
 	{
@@ -136,5 +144,6 @@ void AWeapon::BoxTrace(FHitResult& BoxHit)
 		BoxHit,
 		true
 	);
+
 	IgnoreActors.AddUnique(BoxHit.GetActor());
 }

@@ -20,7 +20,8 @@ class SPARROWRPG_API ABaseCharacter : public ACharacter, public IHitInterface
 public:
 	ABaseCharacter();
 	virtual void Tick(float DeltaTime) override;
-
+	void ShieldGetHit(const FVector& ImpactPoint, AActor* HitActor);
+	
 protected:
 	virtual void BeginPlay() override;
 
@@ -31,17 +32,24 @@ protected:
 	UFUNCTION(BlueprintNativeEvent)
 	void Die();
 
-	void DirectionalHitReact(const FVector& ImpactPoint);
+	void DirectionalHitReact(const FVector& ImpactPoint, AActor* Target);
 	virtual void HandleDamage(float DamageAmount);
 	void PlayHitSound(const FVector& ImpactPoint);
+	void PlayHitShieldSound(const FVector& ImpactPoint);
 	void SpawnHitParticles(const FVector& ImpactPoint);
+	void SpawnHitShieldParticles(const FVector& ImpactPoint);
 	void DisableCapsule();
+	void DisableMeshCollision();
 	virtual bool CanAttack();
 	bool IsAlive();
-	void DisableMeshCollision();
+	void ShieldBlock();
+
 
 	/* Montage */
 	void PlayHitReactMontage(const FName& SectionName);
+	void PlayHitShieldReactMontage();
+	void PlayShieldBlockMontage();
+	void PlayShieldBlockIdleMontage();
 	virtual int32 PlayAttackMontage();
 	virtual int32 PlayDeathMontage();
 	virtual void PlayDodgeMontage();
@@ -60,6 +68,21 @@ protected:
 	virtual void DodgeEnd();
 
 	UFUNCTION(BlueprintCallable)
+	virtual void EnableBlock();
+
+	UFUNCTION(BlueprintCallable)
+	virtual void DisableBlock();
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	UAnimMontage* ShieldMontage;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	EActionState ActionState = EActionState::EAS_Unoccupied;
+
+	UPROPERTY(VisibleInstanceOnly)
+	bool IsDefending = false;
+
+	UFUNCTION(BlueprintCallable)
 	void SetWeaponCollisionEnabled(ECollisionEnabled::Type CollisionEnabled);
 
 	virtual void SetName(FString name);
@@ -67,6 +90,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = Weapon)
 	AWeapon* EquippedWeapon;
+
+	UPROPERTY(VisibleAnywhere, Category = Weapon)
+	class AShield* EquippedShield;
 
 	UPROPERTY(VisibleAnywhere)
 	UAttributeComponent* Attributes;
@@ -88,21 +114,37 @@ protected:
 	UPROPERTY(EditInstanceOnly)
 	int32 Level;
 
-private:
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UParticleSystem* ShieldCounterParticles;
+
 	void PlayMontageSection(UAnimMontage* Montage, const FName& SectionName);
+
+private:
+	
 	int32 PlayRandomMontageSection(UAnimMontage* Montage, const TArray<FName>& SectionNames);
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	USoundBase* HitSound;
 
 	UPROPERTY(EditAnywhere, Category = Combat)
+	USoundBase* ShieldHitSound;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
 	UParticleSystem* HitParticles;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UParticleSystem* ShieldHitParticles;
+
+	
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	UAnimMontage* AttackMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	UAnimMontage* HitReactMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	UAnimMontage* HitShieldReactMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	UAnimMontage* DeathMontage;
@@ -116,7 +158,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	TArray<FName> DeathMontageSection;
 
+
+
 public:
 	FORCEINLINE TEnumAsByte<EDeathPose> GetDeathPose() const { return DeathPose; }
-
+	FORCEINLINE bool GetIsDefending() const { return IsDefending; }
 };
