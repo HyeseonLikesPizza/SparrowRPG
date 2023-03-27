@@ -28,6 +28,9 @@ public:
 	void AttachMeshToActor(AActor* ParentActor, const FName& InSocketName);
 	void DetachWeapon();
 	TArray<AActor*> IgnoreActors;
+	void ApplyDamage(FHitResult BoxHit, float Damage);
+	void Skill1(FVector Start, FVector End);
+	FVector GetWeaponBoxLocation();
 
 protected:
 	class AArcherCharacter* Player;
@@ -46,9 +49,13 @@ protected:
 
 private:
 	void BoxTrace(FHitResult& BoxHit);
+	void SphereTrace(const FVector Start, const FVector End, TArray<FHitResult>& SphereHit);
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	FVector BoxTraceExtent = FVector(5.f);
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	float Skill1Radius = 150.f;
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	bool bShowBoxDebug = false; 
@@ -66,9 +73,12 @@ private:
 	USceneComponent* BoxTraceEnd;
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
-	float Damage = 20.f;
+	float BasicDamage = 20.f;
 	
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	float Skill1Damage = 30.f;
 
 public:
 	FORCEINLINE UBoxComponent* GetWeaponBox() const { return WeaponBox; }
+	FORCEINLINE FVector GetBoxTraceEndLocation() const { return BoxTraceEnd->GetComponentLocation(); }
 };

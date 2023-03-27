@@ -25,15 +25,13 @@ void ABaseCharacter::BeginPlay()
 
 void ABaseCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
 {
-	//if (ActionState == EActionState::EAS_HitReaction)
-	if (ActionState == EActionState::EAS_ShieldHitReaction)
-		return;
-
+	//if (ActionState == EActionState::EAS_ShieldHitReaction)
+	//	return;
 	if (IsAlive() && Hitter)
 	{
 		DirectionalHitReact(Hitter->GetActorLocation(), this);
 	}
-	else if (!IsAlive() && !Hitter)
+	else if (!IsAlive())
 	{
 		DisableMeshCollision();
 		Die();
@@ -192,7 +190,7 @@ void ABaseCharacter::DirectionalHitReact(const FVector& ImpactPoint, AActor* Tar
 	else if (Target != this && (Section == FName("FromFront") || Section == FName("FromRight")))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("!! Shield Montage !!"));
-		ActionState = EActionState::EAS_ShieldHitReaction;
+		//ActionState = EActionState::EAS_ShieldHitReaction;
 		
 		PlayHitShieldReactMontage();
 	}
@@ -285,6 +283,10 @@ bool ABaseCharacter::IsAlive()
 	return Attributes && Attributes->IsAlive();
 }
 
+void ABaseCharacter::ShieldBlock()
+{
+}
+
 void ABaseCharacter::DisableMeshCollision()
 {
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -313,7 +315,7 @@ void ABaseCharacter::EnableBlock()
 void ABaseCharacter::DisableBlock()
 {
 	IsDefending = false;
-	ActionState = EActionState::EAS_Unoccupied;
+	//ActionState = EActionState::EAS_Unoccupied;
 	//EquippedShield->SetShieldNoCollision();
 }
 

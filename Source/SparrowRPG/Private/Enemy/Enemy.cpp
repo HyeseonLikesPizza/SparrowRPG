@@ -55,7 +55,7 @@ float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 	HandleDamage(DamageAmount);
 	CombatTarget = EventInstigator->GetPawn();
 	
-	if (IsInsideAttackRadius())
+	if (IsInsideAttackRadius() && IsAlive())
 	{
 		EnemyState = EEnemyState::EES_Attacking;
 	}

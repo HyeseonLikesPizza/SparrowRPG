@@ -33,6 +33,18 @@ public:
 	bool IsFalling;
 
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	bool ShouldMove;
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	FRotator BaseAimRotation;
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	FVector Velocity;
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	float YawOffset;
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	ECharacterState CharacterState;
 
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
@@ -43,4 +55,18 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	bool IsDead;
+
+	UFUNCTION()
+	void TurnInPlace(float DeltaTime);	
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	float RootYawOffset;
+
+	FRotator MovingRotation;
+	FRotator LastMovingRotation;
+	float DistanceCurve;
+	float LastDistanceCurve;
+	float DeltaDistanceCurve;
+	float AbsRootYawOffset;
+	float YawExcess;
 };

@@ -89,6 +89,44 @@ void AWeapon::DetachWeapon()
 	ItemMesh->DetachFromComponent(TransformRules);
 }
 
+void AWeapon::ApplyDamage(FHitResult BoxHit, float Damage)
+{
+	if (BoxHit.GetActor())
+	{
+		if (ActorIsSameType(BoxHit.GetActor())) return;
+		UE_LOG(LogTemp, Warning, TEXT("BoxHit Actor : %s"), *BoxHit.GetActor()->GetName());
+		UGameplayStatics::ApplyDamage(BoxHit.GetActor(), Damage, GetInstigator()->GetController(), this, UDamageType::StaticClass());
+		ExecuteGetHit(BoxHit);
+		CreateFields(BoxHit.ImpactPoint);
+	}
+}
+
+void AWeapon::Skill1(FVector Start, FVector End)
+{
+	TArray<FHitResult> SphereHit;
+	TArray<FString> Done;
+
+	SphereTrace(Start, End, SphereHit);
+	
+	Done.Empty();
+
+	for (auto result : SphereHit)
+	{
+		if (Done.Find(result.GetActor()->GetName()) == INDEX_NONE)
+		{
+			ApplyDamage(result, Skill1Damage);
+			Done.Add(result.GetActor()->GetName());
+		}
+	} 
+
+	IgnoreActors.Empty();
+}
+
+FVector AWeapon::GetWeaponBoxLocation()
+{
+	return WeaponBox->GetComponentLocation();
+}
+
 void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (ActorIsSameType(OtherActor)) return;
@@ -96,14 +134,7 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 	FHitResult BoxHit;
 	BoxTrace(BoxHit);
 	
-	if (BoxHit.GetActor())
-	{
-		if (ActorIsSameType(BoxHit.GetActor())) return;
-		UE_LOG(LogTemp, Warning, TEXT("BoxHit Actor : %s"), *BoxHit.GetActor()->GetName());
-		ExecuteGetHit(BoxHit);
-		UGameplayStatics::ApplyDamage(BoxHit.GetActor(), Damage, GetInstigator()->GetController(), this, UDamageType::StaticClass());
-		CreateFields(BoxHit.ImpactPoint);
-	}
+	ApplyDamage(BoxHit, BasicDamage);
 }
 
 bool AWeapon::ActorIsSameType(AActor* OtherActor)
@@ -146,4 +177,36 @@ void AWeapon::BoxTrace(FHitResult& BoxHit)
 	);
 
 	IgnoreActors.AddUnique(BoxHit.GetActor());
+}
+
+void AWeapon::SphereTrace(const FVector Start, const FVector End, TArray<FHitResult>& SphereHit)
+{
+	//const FVector Start = BoxTraceStart->GetComponentLocation();
+	//const FVector End = BoxTraceEnd->GetComponentLocation();
+
+	TArray<AActor*> ActorsToIgnore;
+	ActorsToIgnore.AddUnique(GetOwner());
+	ActorsToIgnore.AddUnique(this);
+
+	for (AActor* Actor : IgnoreActors)
+	{
+		ActorsToIgnore.AddUnique(Actor);
+	}
+
+	UKismetSystemLibrary::SphereTraceMulti(
+		this, Start, End, Skill1Radius,
+		ETraceTypeQuery::TraceTypeQuery1,
+		false,
+		ActorsToIgnore,
+		bShowBoxDebug ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None,
+		SphereHit,
+		true
+	);
+
+	for (auto result : SphereHit)
+	{
+		IgnoreActors.AddUnique(result.GetActor());
+	}
+	
+	//IgnoreActors.AddUnique(BoxHit.GetActor());
 }

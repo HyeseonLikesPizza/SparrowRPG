@@ -148,6 +148,7 @@ void AArcherCharacter::ShieldTakeDamage(float DamageAmount, FDamageEvent const& 
 
 void AArcherCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
 {
+
 	Super::GetHit_Implementation(ImpactPoint, Hitter);
 
 	SetWeaponCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -437,10 +438,10 @@ void AArcherCharacter::CounterAttack()
 
 void AArcherCharacter::Skill_1()
 {
-	
-	if (CharacterState == ECharacterState::ECS_EquippedOneHandedWeaponAndShield)
+	if (CharacterState == ECharacterState::ECS_EquippedOneHandedWeaponAndShield
+		&& CanAttack())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("skill1"));
+		ActionState = EActionState::EAS_Attacking;
 		Skill_SwordShield_CastingAndStrike();
 	}
 }
@@ -516,6 +517,12 @@ void AArcherCharacter::ShowLoadWidget(APlayerController* PlayerController)
 	PlayerController->bShowMouseCursor = true;
 	PlayerController->bEnableClickEvents = true;
 	PlayerController->bEnableMouseOverEvents = true;
+}
+
+void AArcherCharacter::SpawnCastingParticles()
+{
+	FVector SpawnLoc = EquippedWeapon->GetBoxTraceEndLocation();
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), CastingParticles, SpawnLoc, UE::Math::TRotator<double>::ZeroRotator, ((FVector3d)((1.0F))));
 }
 
 void AArcherCharacter::EquipWeapon(AWeapon* Weapon, bool PlaySound)
@@ -637,12 +644,18 @@ void AArcherCharacter::SetPlayTime(float playtime)
 void AArcherCharacter::Skill_SwordShield_CastingAndStrike()
 {
 	PlayMontageSection(CastingStrikeMontage, FName("Default"));
+}
 
-	FVector Bottom = FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z - GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
-	FVector Forward = Bottom + FVector(-10.f, -65.f, 0.f);
-	DRAW_SPHERE(Forward);
-	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), CastingAndStrikeParticles, Forward);
+void AArcherCharacter::SpawnCastingStrikeParticles()
+{
+	FVector vec = GetCapsuleComponent()->GetRelativeLocation() + GetActorForwardVector() * 100;
+	FVector Bottom = FVector(vec.X, vec.Y, GetActorLocation().Z - GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), CastingAndStrikeParticles, Bottom, UE::Math::TRotator<double>::ZeroRotator, ((FVector3d)((2.0F))));
 
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->Skill1(Bottom, Bottom + GetActorForwardVector() * 100);
+	}
 }
 
 void AArcherCharacter::FinishEquipping()
@@ -693,6 +706,8 @@ void AArcherCharacter::SpawnDefaultShield()
 	UWorld* World = GetWorld();
 	if (World && ShieldClass)
 	{
+		
+		//FTransform Transform(UE::Math::TVector<double>((0.0F),(0.F),(0.F)), FRotator::ZeroRotator, UE::Math::TVector<double>((0.7F), (0.7F), (0.7F)));
 		AShield* Shield = World->SpawnActor<AShield>(ShieldClass);
 		Shield->Equip(GetMesh(), FName("LeftArmSocket"), this, this, false);
 		EquippedShield = Shield;

@@ -76,8 +76,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = Combat)
 	UAnimMontage* ShieldMontage;
 
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	EActionState ActionState = EActionState::EAS_Unoccupied;
+	
 
 	UPROPERTY(VisibleInstanceOnly)
 	bool IsDefending = false;

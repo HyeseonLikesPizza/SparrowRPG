@@ -71,6 +71,7 @@ public:
 
 protected:
 
+
 	/** 입력에 필요한 콜백함수 */
 	virtual void BeginPlay() override;
 	void Move(const FInputActionValue& value);
@@ -95,6 +96,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void ShowLoadWidget(APlayerController* PlayerController);
 
+	UFUNCTION(BlueprintCallable)
+	void SpawnCastingParticles();
+
 	/* Combat */
 
 	virtual void AttackEnd() override;
@@ -111,6 +115,9 @@ protected:
 	void SetPlayerPlace(FString place);
 	void SetPlayTime(float playtime);
 	void Skill_SwordShield_CastingAndStrike();
+
+	UFUNCTION(BlueprintCallable)
+	void SpawnCastingStrikeParticles();
 
 	UFUNCTION(BlueprintCallable)
 	void FinishEquipping();
@@ -175,6 +182,9 @@ private:
 	void SpawnDefaultWeapon();
 	void SpawnSwordShield();
 
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	EActionState ActionState = EActionState::EAS_Unoccupied;
+
 	/* 캐릭터 컴포넌트 */
 
 	UPROPERTY(VisibleAnywhere)
@@ -232,6 +242,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UParticleSystem* CastingAndStrikeParticles;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UParticleSystem* CastingParticles;
 	
 
 public:
