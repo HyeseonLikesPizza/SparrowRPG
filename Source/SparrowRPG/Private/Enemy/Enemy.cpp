@@ -4,6 +4,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/AttributeComponent.h"
+#include "Components/DamageDisplayComponent.h"
 #include "HUD/HealthBarComponent.h"
 #include "Perception/PawnSensingComponent.h"
 #include "Item/Weapon/Weapon.h"
@@ -31,6 +32,9 @@ AEnemy::AEnemy()
 	PawnSensing = CreateDefaultSubobject<UPawnSensingComponent>(TEXT("PawnSensing"));
 	PawnSensing->SetPeripheralVisionAngle(45.f);
 	PawnSensing->SightRadius = 4000.f;
+
+	DamageDisplayComponent = CreateDefaultSubobject<UDamageDisplayComponent>(TEXT("DamageDisplayComponent"));
+
 }
 
 void AEnemy::Tick(float DeltaTime)
@@ -84,6 +88,8 @@ void AEnemy::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
 
 	SetWeaponCollisionEnabled(ECollisionEnabled::NoCollision);
 	StopAttackMontage();
+
+
 
 	if (IsInsideAttackRadius())
 	{
@@ -154,10 +160,19 @@ void AEnemy::HandleDamage(float DamageAmount)
 {
 	Super::HandleDamage(DamageAmount);
 
-	if (Attributes && HealthBarWidget)
+	if (Attributes && HealthBarWidget && DamageDisplayComponent)
 	{
 		HealthBarWidget->SetHealthPercent(Attributes->GetHealthPercent());
 	}
+
+	if (DamageDisplayComponent)
+	{
+		if (EquippedWeapon->IsCritical(DamageAmount))
+			DamageDisplayComponent->DamageTaken(DamageAmount, true);
+		else
+			DamageDisplayComponent->DamageTaken(DamageAmount, false);
+	}
+
 }
 
 void AEnemy::InitializeEnemy()

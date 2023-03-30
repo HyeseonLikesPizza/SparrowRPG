@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Item/Item.h"
+#include "../../Characters/CharacterTypes.h"
 #include "Weapon.generated.h"
 
 /**
@@ -31,6 +32,16 @@ public:
 	void ApplyDamage(FHitResult BoxHit, float Damage);
 	void Skill1(FVector Start, FVector End);
 	FVector GetWeaponBoxLocation();
+	int32 CalculateNormalDamage(float Damage);
+	int32 CalculateCriticalDamage(float Damage);
+	int32 CalculateDamage(float Damage);
+	bool IsCritical(float Damage);
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	float BasicDamage = 1000.f;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	float Skill1Damage = 1200.f;
 
 protected:
 	class AArcherCharacter* Player;
@@ -72,11 +83,10 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	USceneComponent* BoxTraceEnd;
 
-	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
-	float BasicDamage = 20.f;
-	
-	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
-	float Skill1Damage = 30.f;
+	UPROPERTY()
+	EAttackType AttackType;
+
+
 
 public:
 	FORCEINLINE UBoxComponent* GetWeaponBox() const { return WeaponBox; }

@@ -48,3 +48,10 @@ enum class EEnemyState : uint8
 	EES_Engaged UMETA(DisplayName = "Engaged")
 	
 };
+
+UENUM(BlueprintType)
+enum class EAttackType : uint8
+{
+	EAT_Normal UMETA(DisplayName = "Normal"),
+	EAT_Sword_Skill1 UMETA(DisplayName = "Sword Skill1")
+};

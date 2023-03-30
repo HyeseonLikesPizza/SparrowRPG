@@ -706,8 +706,7 @@ void AArcherCharacter::SpawnDefaultShield()
 	UWorld* World = GetWorld();
 	if (World && ShieldClass)
 	{
-		
-		//FTransform Transform(UE::Math::TVector<double>((0.0F),(0.F),(0.F)), FRotator::ZeroRotator, UE::Math::TVector<double>((0.7F), (0.7F), (0.7F)));
+		//FTransform SpawnTransform(FRotator::ZeroRotator, UE::Math::TVector<double>((0.0F),(0.F),(0.F)), UE::Math::TVector<double>((0.1F), (0.1F), (0.1F)));
 		AShield* Shield = World->SpawnActor<AShield>(ShieldClass);
 		Shield->Equip(GetMesh(), FName("LeftArmSocket"), this, this, false);
 		EquippedShield = Shield;

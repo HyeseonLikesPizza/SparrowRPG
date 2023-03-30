@@ -7,6 +7,7 @@
 
 class UHealthBarComponent;
 class UPawnSensingComponent;
+class UDamageDisplayComponent;
 
 UCLASS()
 class SPARROWRPG_API AEnemy : public ABaseCharacter
@@ -43,6 +44,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	EEnemyState EnemyState = EEnemyState::EES_Patrolling;
+
+	UPROPERTY(VisibleAnywhere)
+	UDamageDisplayComponent* DamageDisplayComponent;
 
 private:
 

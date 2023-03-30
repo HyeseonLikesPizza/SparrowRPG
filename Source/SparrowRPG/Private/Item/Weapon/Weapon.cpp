@@ -95,7 +95,8 @@ void AWeapon::ApplyDamage(FHitResult BoxHit, float Damage)
 	{
 		if (ActorIsSameType(BoxHit.GetActor())) return;
 		UE_LOG(LogTemp, Warning, TEXT("BoxHit Actor : %s"), *BoxHit.GetActor()->GetName());
-		UGameplayStatics::ApplyDamage(BoxHit.GetActor(), Damage, GetInstigator()->GetController(), this, UDamageType::StaticClass());
+		int32 RanDam = CalculateDamage(Damage);
+		UGameplayStatics::ApplyDamage(BoxHit.GetActor(), RanDam, GetInstigator()->GetController(), this, UDamageType::StaticClass());
 		ExecuteGetHit(BoxHit);
 		CreateFields(BoxHit.ImpactPoint);
 	}
@@ -125,6 +126,46 @@ void AWeapon::Skill1(FVector Start, FVector End)
 FVector AWeapon::GetWeaponBoxLocation()
 {
 	return WeaponBox->GetComponentLocation();
+}
+
+int32 AWeapon::CalculateNormalDamage(float Damage)
+{
+	int MinDamage = Damage - (int)Damage / 10;
+	int MaxDamage = Damage + (int)Damage / 10;
+	const int32 Selection = FMath::RandRange(MinDamage, MaxDamage);
+
+	return Selection;
+}
+
+int32 AWeapon::CalculateCriticalDamage(float Damage)
+{
+	int MinDamage = Damage + 3*(int)Damage / 10;
+	int MaxDamage = Damage + 4*(int)Damage / 10;
+	const int32 Selection = FMath::RandRange(MinDamage, MaxDamage);
+
+	return Selection;
+}
+
+int32 AWeapon::CalculateDamage(float Damage)
+{
+	const int Num = 1;
+	int32 damage;
+	const int32 Selection = FMath::RandRange(0, Num);
+
+	if (Selection == Num)
+		damage = CalculateCriticalDamage(Damage);
+	else
+		damage = CalculateNormalDamage(Damage);
+
+	return damage;
+}
+
+bool AWeapon::IsCritical(float Damage)
+{
+	if (Damage >= BasicDamage + 3 * (int)BasicDamage / 10)
+		return true;
+	else
+		return false;
 }
 
 void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
