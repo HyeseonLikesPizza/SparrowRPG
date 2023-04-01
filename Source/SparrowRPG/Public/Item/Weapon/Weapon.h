@@ -35,7 +35,7 @@ public:
 	int32 CalculateNormalDamage(float Damage);
 	int32 CalculateCriticalDamage(float Damage);
 	int32 CalculateDamage(float Damage);
-	bool IsCritical(float Damage);
+	bool IsCritical(float Damage, EAttackType Attack);
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float BasicDamage = 1000.f;
@@ -82,10 +82,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	USceneComponent* BoxTraceEnd;
-
-	UPROPERTY()
-	EAttackType AttackType;
-
 
 
 public:

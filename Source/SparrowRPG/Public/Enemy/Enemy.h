@@ -17,6 +17,7 @@ class SPARROWRPG_API AEnemy : public ABaseCharacter
 	
 public:
 	AEnemy();
+	void SetPlayerAttackType(EAttackType Type);
 
 	/* <AActor> */
 	virtual void Tick(float DeltaTime) override;
@@ -40,6 +41,7 @@ protected:
 	virtual bool CanAttack() override;
 	virtual void AttackEnd() override;
 	virtual void HandleDamage(float DamageAmount) override;
+	void SetDamageDisplay(float DamageAmount, EAttackType Attack);
 	/* </ABaseCharacter> */
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
@@ -47,6 +49,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	UDamageDisplayComponent* DamageDisplayComponent;
+
+	UPROPERTY()
+	EAttackType PlayerAttackType;
 
 private:
 

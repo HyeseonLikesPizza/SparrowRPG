@@ -99,6 +99,10 @@ void AWeapon::ApplyDamage(FHitResult BoxHit, float Damage)
 		UGameplayStatics::ApplyDamage(BoxHit.GetActor(), RanDam, GetInstigator()->GetController(), this, UDamageType::StaticClass());
 		ExecuteGetHit(BoxHit);
 		CreateFields(BoxHit.ImpactPoint);
+
+		AArcherCharacter* Character = Cast<AArcherCharacter>(GetOwner());
+
+
 	}
 }
 
@@ -160,13 +164,29 @@ int32 AWeapon::CalculateDamage(float Damage)
 	return damage;
 }
 
-bool AWeapon::IsCritical(float Damage)
+bool AWeapon::IsCritical(float Damage, EAttackType Attack)
 {
-	if (Damage >= BasicDamage + 3 * (int)BasicDamage / 10)
+	int SkillDamage;
+
+	switch (Attack)
+	{
+	case EAttackType::EAT_Normal:
+		SkillDamage = BasicDamage;
+		break;
+	case EAttackType::EAT_Sword_Skill1:
+		SkillDamage = Skill1Damage;
+		break;
+	default:
+		SkillDamage = BasicDamage;
+		break;
+	}
+
+	if (Damage >= SkillDamage + 3 * SkillDamage / 10)
 		return true;
 	else
 		return false;
 }
+
 
 void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {

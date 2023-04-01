@@ -52,6 +52,7 @@ enum class EEnemyState : uint8
 UENUM(BlueprintType)
 enum class EAttackType : uint8
 {
+	EAT_None UMETA(DisplayName = "None"),
 	EAT_Normal UMETA(DisplayName = "Normal"),
 	EAT_Sword_Skill1 UMETA(DisplayName = "Sword Skill1")
 };

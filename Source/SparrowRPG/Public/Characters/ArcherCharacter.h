@@ -66,7 +66,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void AttachWeaponToHand();
 
+	UFUNCTION(BlueprintCallable)
+	void SetAttackType(EAttackType type);
+
 	bool bRightMouseClicked = false;
+	
 	
 
 protected:

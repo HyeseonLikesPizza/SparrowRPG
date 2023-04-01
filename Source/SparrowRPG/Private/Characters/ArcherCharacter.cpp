@@ -22,6 +22,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Components/CapsuleComponent.h"
 #include "../DebugMacros.h"
+#include "Enemy/Enemy.h"
 
 
 AArcherCharacter::AArcherCharacter()
@@ -601,6 +602,15 @@ void AArcherCharacter::AttachWeaponToHand()
 	if (EquippedWeapon)
 	{
 		EquippedWeapon->AttachMeshToComponent(GetMesh(), FName("RightHandSocket"));
+	}
+}
+
+void AArcherCharacter::SetAttackType(EAttackType type)
+{
+	AEnemy* Enemy = Cast<AEnemy>(CombatTarget);
+	if (Enemy)
+	{
+		Enemy->SetPlayerAttackType(type);
 	}
 }
 

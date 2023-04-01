@@ -37,6 +37,11 @@ AEnemy::AEnemy()
 
 }
 
+void AEnemy::SetPlayerAttackType(EAttackType Type)
+{
+	PlayerAttackType = Type;
+}
+
 void AEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -58,6 +63,8 @@ float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 {
 	HandleDamage(DamageAmount);
 	CombatTarget = EventInstigator->GetPawn();
+
+	SetDamageDisplay(DamageAmount, PlayerAttackType);
 	
 	if (IsInsideAttackRadius() && IsAlive())
 	{
@@ -82,7 +89,9 @@ void AEnemy::Destroyed()
 void AEnemy::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
 {
 	Super::GetHit_Implementation(ImpactPoint, Hitter);
+
 	if (!IsDead()) ShowHealthBar();
+
 	ClearPatrolTimer();
 	ClearAttackTimer();
 
@@ -165,14 +174,19 @@ void AEnemy::HandleDamage(float DamageAmount)
 		HealthBarWidget->SetHealthPercent(Attributes->GetHealthPercent());
 	}
 
+	
+
+}
+
+void AEnemy::SetDamageDisplay(float DamageAmount, EAttackType Attack)
+{
 	if (DamageDisplayComponent)
 	{
-		if (EquippedWeapon->IsCritical(DamageAmount))
+		if (EquippedWeapon->IsCritical(DamageAmount, Attack))
 			DamageDisplayComponent->DamageTaken(DamageAmount, true);
 		else
 			DamageDisplayComponent->DamageTaken(DamageAmount, false);
 	}
-
 }
 
 void AEnemy::InitializeEnemy()
